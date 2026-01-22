@@ -2,7 +2,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
 
+from ..auth_tokens import create_access_token
 from ..db import get_conn
+from ..services import oauth as oauth_service
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 
@@ -30,7 +32,8 @@ def create_anonymous():
             )
             conn.commit()
 
-    return {'token': 'TODO.JWT', 'user_id': user_id}
+    token = create_access_token(user_id)
+    return {'token': token, 'user_id': user_id}
 
 
 @router.post('/oauth')
@@ -38,8 +41,12 @@ def oauth_sign_in(payload: OAuthRequest):
     provider = payload.provider
     id_token = payload.id_token
 
-    # TODO: Verify id_token with Apple/Google and extract provider_user_id.
-    provider_user_id = id_token
+    if provider not in ('google',):
+        raise HTTPException(status_code=400, detail='Invalid provider')
+    try:
+        provider_user_id = oauth_service.verify_google_id_token(id_token)
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail='Invalid id_token') from exc
 
     with get_conn() as conn:
         with conn.cursor() as cur:
@@ -66,4 +73,5 @@ def oauth_sign_in(payload: OAuthRequest):
     if not user_id:
         raise HTTPException(status_code=403, detail='Auth failed')
 
-    return {'token': 'TODO.JWT', 'user_id': user_id}
+    token = create_access_token(user_id)
+    return {'token': token, 'user_id': user_id}

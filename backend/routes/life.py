@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
 
+from ..config import AD_REWARD_MAX_PER_DAY, AD_REWARD_MAX_PER_HOUR
 from ..db import get_conn
 from .security import get_user_id
 
@@ -58,8 +59,29 @@ def consume_life(payload: LifeConsumeRequest, user_id: str = Depends(get_user_id
 
 @router.post('/ads/reward/complete')
 def reward_ad(payload: RewardAdRequest, user_id: str = Depends(get_user_id)):
+    if payload.reward_amount <= 0:
+        raise HTTPException(status_code=400, detail='Invalid reward_amount')
+    if not payload.ad_provider:
+        raise HTTPException(status_code=400, detail='Missing ad_provider')
+    if not payload.placement:
+        raise HTTPException(status_code=400, detail='Missing placement')
+
     with get_conn() as conn:
         with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM ad_events WHERE user_id = %s AND ad_type = %s AND placement = %s AND event_time > now() - interval '1 hour'",
+                (user_id, 'reward', payload.placement),
+            )
+            if cur.fetchone()[0] >= AD_REWARD_MAX_PER_HOUR:
+                raise HTTPException(status_code=429, detail='Too many reward ads (hourly)')
+
+            cur.execute(
+                "SELECT COUNT(*) FROM ad_events WHERE user_id = %s AND ad_type = %s AND placement = %s AND event_time > now() - interval '1 day'",
+                (user_id, 'reward', payload.placement),
+            )
+            if cur.fetchone()[0] >= AD_REWARD_MAX_PER_DAY:
+                raise HTTPException(status_code=429, detail='Too many reward ads (daily)')
+
             ad_event_id = str(uuid4())
             cur.execute(
                 'INSERT INTO ad_events (id, user_id, ad_type, provider, placement, rewarded, reward_amount) VALUES (%s, %s, %s, %s, %s, %s, %s)',

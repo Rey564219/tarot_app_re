@@ -3,16 +3,55 @@ import random
 from datetime import datetime, timezone
 
 MAJOR_ARCANA = [
-    'The Fool', 'The Magician', 'The High Priestess', 'The Empress', 'The Emperor',
-    'The Hierophant', 'The Lovers', 'The Chariot', 'Strength', 'The Hermit',
-    'Wheel of Fortune', 'Justice', 'The Hanged Man', 'Death', 'Temperance',
-    'The Devil', 'The Tower', 'The Star', 'The Moon', 'The Sun',
-    'Judgement', 'The World'
+    'The Fool',
+    'The Magician',
+    'The High Priestess',
+    'The Empress',
+    'The Emperor',
+    'The Hierophant',
+    'The Lovers',
+    'The Chariot',
+    'Strength',
+    'The Hermit',
+    'Wheel of Fortune',
+    'Justice',
+    'The Hanged Man',
+    'Death',
+    'Temperance',
+    'The Devil',
+    'The Tower',
+    'The Star',
+    'The Moon',
+    'The Sun',
+    'Judgement',
+    'The World',
 ]
 
-FLOWER_TIMINGS = [
-    'in 1 week', 'in 2 weeks', 'in 1 month', 'in 2 months', 'in 3 months', 'later'
+MINOR_SUITS = ['Wands', 'Cups', 'Swords', 'Pentacles']
+MINOR_RANKS = [
+    'Ace',
+    'Two',
+    'Three',
+    'Four',
+    'Five',
+    'Six',
+    'Seven',
+    'Eight',
+    'Nine',
+    'Ten',
+    'Page',
+    'Knight',
+    'Queen',
+    'King',
 ]
+
+MAJOR_DECK = [{'name': name, 'arcana': 'major'} for name in MAJOR_ARCANA]
+MINOR_DECK = [
+    {'name': f'{rank} of {suit}', 'arcana': 'minor', 'suit': suit, 'rank': rank}
+    for suit in MINOR_SUITS
+    for rank in MINOR_RANKS
+]
+FULL_DECK = MAJOR_DECK + MINOR_DECK
 
 
 def _seed_to_int(seed: str) -> int:
@@ -35,15 +74,15 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
     base_rng = random.Random(_seed_to_int(base_seed))
 
     if fortune_type_key.startswith('hexagram_'):
-        number = base_rng.randint(1, 64)
+        cards = _draw_cards(base_rng, 7, major_only=False)
         return {
             'type': 'hexagram',
-            'number': number,
+            'cards': cards,
             'seed': base_seed,
         }
 
     if fortune_type_key.startswith('celtic_'):
-        cards = _draw_cards(base_rng, 10)
+        cards = _draw_cards(base_rng, 10, major_only=False)
         return {
             'type': 'celtic_cross',
             'cards': cards,
@@ -51,15 +90,15 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         }
 
     if fortune_type_key == 'flower_timing':
-        timing = base_rng.choice(FLOWER_TIMINGS)
+        cards = _draw_cards(base_rng, 12, major_only=True)
         return {
             'type': 'flower_timing',
-            'timing': timing,
+            'cards': cards,
             'seed': base_seed,
         }
 
     if fortune_type_key == 'triangle_crime':
-        cards = _draw_cards(base_rng, 3)
+        cards = _draw_cards(base_rng, 3, major_only=False)
         return {
             'type': 'triangle_warning',
             'cards': cards,
@@ -67,7 +106,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         }
 
     if fortune_type_key == 'no_desc_draw':
-        cards = _draw_cards(base_rng, 1)
+        cards = _draw_cards(base_rng, 2, major_only=False)
         return {
             'type': 'no_desc_draw',
             'cards': cards,
@@ -75,7 +114,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         }
 
     if fortune_type_key == 'compatibility':
-        cards = _draw_cards(base_rng, 2)
+        cards = _draw_cards(base_rng, 3, major_only=False)
         return {
             'type': 'compatibility',
             'cards': cards,
@@ -86,20 +125,41 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
     if fortune_type_key.startswith('today_deep_'):
         deep_seed = f'{base_seed}:{fortune_type_key}'
         deep_rng = random.Random(_seed_to_int(deep_seed))
-        base_card = _draw_cards(base_rng, 1)[0]
-        aspects = {
-            'advice': deep_rng.choice(MAJOR_ARCANA),
-            'risk': deep_rng.choice(MAJOR_ARCANA),
-        }
+        base_card = _draw_cards(base_rng, 1, major_only=False)[0]
+        extra_cards = _draw_cards(deep_rng, 4, major_only=False, exclude_names={base_card['name']})
         return {
             'type': 'today_deep',
             'base_card': base_card,
-            'aspects': aspects,
+            'extra_cards': extra_cards,
             'seed': base_seed,
             'deep_seed': deep_seed,
         }
 
-    cards = _draw_cards(base_rng, 1)
+    if fortune_type_key == 'today_free':
+        cards = _draw_cards(base_rng, 1, major_only=False)
+        return {
+            'type': 'today_free',
+            'cards': cards,
+            'seed': base_seed,
+        }
+
+    if fortune_type_key == 'week_one':
+        cards = _draw_cards(base_rng, 5, major_only=False)
+        return {
+            'type': 'week_one',
+            'cards': cards,
+            'seed': base_seed,
+        }
+
+    if fortune_type_key == 'partner_sexual':
+        cards = _draw_cards(base_rng, 3, major_only=False)
+        return {
+            'type': 'partner_sexual',
+            'cards': cards,
+            'seed': base_seed,
+        }
+
+    cards = _draw_cards(base_rng, 1, major_only=False)
     return {
         'type': 'single_draw',
         'cards': cards,
@@ -107,13 +167,32 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
     }
 
 
-def _draw_cards(rng: random.Random, count: int) -> list[dict]:
-    indices = rng.sample(range(len(MAJOR_ARCANA)), count)
+def _draw_cards(
+    rng: random.Random,
+    count: int,
+    major_only: bool,
+    exclude_names: set[str] | None = None,
+) -> list[dict]:
+    deck = MAJOR_DECK if major_only else FULL_DECK
+    if exclude_names:
+        available = [card for card in deck if card['name'] not in exclude_names]
+    else:
+        available = deck
+
+    if count > len(available):
+        raise ValueError('Requested more cards than available in deck')
+
+    indices = rng.sample(range(len(available)), count)
     cards = []
     for idx in indices:
-        upright = rng.choice([True, False])
-        cards.append({
-            'name': MAJOR_ARCANA[idx],
-            'upright': upright,
-        })
+        base = available[idx]
+        cards.append(
+            {
+                'name': base['name'],
+                'arcana': base['arcana'],
+                'suit': base.get('suit'),
+                'rank': base.get('rank'),
+                'upright': rng.choice([True, False]),
+            }
+        )
     return cards

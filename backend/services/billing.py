@@ -33,6 +33,7 @@ def verify_apple_receipt(receipt: str) -> dict[str, Any]:
         response = requests.post(APPLE_VERIFY_SANDBOX_URL, json=payload, timeout=10)
         data = response.json()
 
+    _assert_apple_ok(data)
     return data
 
 
@@ -118,3 +119,9 @@ def resolve_google_package() -> str:
     if not GOOGLE_PACKAGE_NAME:
         raise RuntimeError('GOOGLE_PACKAGE_NAME is not set')
     return GOOGLE_PACKAGE_NAME
+
+
+def _assert_apple_ok(data: dict[str, Any]) -> None:
+    status = data.get('status')
+    if status != 0:
+        raise ValueError(f'Apple receipt status not OK: {status}')

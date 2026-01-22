@@ -38,6 +38,8 @@ def verify_purchase(payload: PurchaseVerifyRequest, user_id: str = Depends(get_u
 
     if not store_transaction_id:
         raise HTTPException(status_code=409, detail='Missing transaction id')
+    if purchase.get('status') != 'verified':
+        raise HTTPException(status_code=409, detail='Purchase not verified')
 
     with get_conn() as conn:
         with conn.cursor() as cur:

@@ -3,7 +3,10 @@
 ## Common
 - Auth bootstrap
   - If no token: `POST /auth/anonymous` → store JWT.
-  - If OAuth: `POST /auth/oauth` → store JWT.
+  - If OAuth: `POST /auth/oauth` → store JWT. (Google only)
+- Auth header
+  - Use `Authorization: Bearer <token>` on all authenticated requests.
+  - (Dev fallback) `x-user-id` is accepted only when enabled server-side.
 - Master preload (app start)
   - `GET /master/fortune-types`
   - `GET /master/products`
