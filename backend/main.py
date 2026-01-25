@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from .routes import auth, master, life, readings, warnings, billing, affiliate, consultation
+from .routes import auth, master, life, readings, warnings, billing, affiliate, consultation, interpretations
 
 
 def create_app() -> FastAPI:
@@ -13,6 +13,7 @@ def create_app() -> FastAPI:
     app.include_router(billing.router)
     app.include_router(affiliate.router)
     app.include_router(consultation.router)
+    app.include_router(interpretations.router)
     return app
 
 

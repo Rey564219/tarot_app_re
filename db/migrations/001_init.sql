@@ -1,5 +1,7 @@
 BEGIN;
 
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 CREATE TABLE users (
   id uuid PRIMARY KEY,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -170,5 +172,45 @@ CREATE TABLE consultation_requests (
 );
 
 CREATE INDEX consultation_requests_user_id_requested_at_idx ON consultation_requests (user_id, requested_at);
+
+CREATE TABLE card_catalog (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE,
+  arcana text NOT NULL,
+  suit text,
+  rank text
+);
+
+CREATE TABLE card_meanings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  card_id uuid NOT NULL REFERENCES card_catalog(id),
+  orientation text NOT NULL,
+  short_meaning text,
+  keywords text[],
+  UNIQUE (card_id, orientation)
+);
+
+CREATE TABLE fortune_spreads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  fortune_type_id uuid NOT NULL REFERENCES fortune_types(id),
+  name text NOT NULL
+);
+
+CREATE TABLE fortune_spread_slots (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  spread_id uuid NOT NULL REFERENCES fortune_spreads(id),
+  slot_index int NOT NULL,
+  position_label text NOT NULL,
+  UNIQUE (spread_id, slot_index)
+);
+
+CREATE TABLE reading_interpretations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  reading_id uuid NOT NULL REFERENCES readings(id),
+  input_json jsonb NOT NULL,
+  output_text text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (reading_id)
+);
 
 COMMIT;

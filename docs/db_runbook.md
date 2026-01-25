@@ -11,12 +11,22 @@
 ## Apply migrations
 ```bash
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_init.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_interpretation_versions.sql
 ```
 
 ## Apply seed data
 ```bash
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/seeds/001_master_seed.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/seeds/002_interpretation_seed.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/seeds/003_card_meanings_seed.sql
 ```
+
+## Claude config
+- `ANTHROPIC_API_KEY`
+- `ANTHROPIC_MODEL` (default: claude-3-5-sonnet-20241022)
+- `ANTHROPIC_API_URL` (optional override)
+- `ANTHROPIC_MAX_RETRIES` (default: 3)
+- `ANTHROPIC_RETRY_BACKOFF` (default: 1.5 seconds)
 
 ## Verify
 ```bash

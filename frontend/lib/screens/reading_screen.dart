@@ -16,6 +16,13 @@ class _ReadingScreenState extends State<ReadingScreen> {
   bool _loading = false;
   dynamic _result;
   String? _error;
+  bool _inputSent = false;
+  Map<String, dynamic>? _interpretation;
+  List<dynamic> _history = [];
+  final _questionController = TextEditingController();
+  final _contextController = TextEditingController();
+  bool _savingInput = false;
+  bool _generating = false;
 
   @override
   void initState() {
@@ -23,6 +30,10 @@ class _ReadingScreenState extends State<ReadingScreen> {
     _result = widget.resultJson;
     if (_result == null) {
       _fetch();
+    } else {
+      _sendInterpretationInput();
+      _loadInterpretation();
+      _loadHistory();
     }
   }
 
@@ -31,6 +42,9 @@ class _ReadingScreenState extends State<ReadingScreen> {
     try {
       final response = await AppSession.instance.api.getJson('/readings/${widget.readingId}');
       setState(() => _result = response['result_json']);
+      await _sendInterpretationInput();
+      await _loadInterpretation();
+      await _loadHistory();
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -71,9 +85,13 @@ class _ReadingScreenState extends State<ReadingScreen> {
     final baseCard = result['base_card'];
     final extraCards = result['extra_cards'] as List<dynamic>?;
 
+    _sendInterpretationInput();
+
     return ListView(
       children: [
         Text(title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 12),
+        _questionSection(),
         const SizedBox(height: 12),
         if (baseCard != null)
           Card(
@@ -104,8 +122,25 @@ class _ReadingScreenState extends State<ReadingScreen> {
             );
           }).toList(),
         ],
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _generating ? null : _generateInterpretation,
+            icon: _generating
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.auto_awesome),
+            label: Text(_generating ? '生成中...' : 'AI解釈を生成'),
+          ),
+        ),
         const SizedBox(height: 16),
         _aiPlaceholder(),
+        const SizedBox(height: 12),
+        _historySection(),
         const SizedBox(height: 16),
         Text('Raw JSON', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
@@ -126,6 +161,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
   }
 
   Widget _aiPlaceholder() {
+    final output = _interpretation?['output_text'];
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -134,12 +170,226 @@ class _ReadingScreenState extends State<ReadingScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text('AI解釈（後で生成）', style: TextStyle(fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text('カード名・簡易意味・配置（過去/現在/未来など）を入力として生成予定。'),
+        children: [
+          const Text('AI解釈', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(output == null || output.toString().isEmpty ? '（未生成）' : output.toString()),
         ],
       ),
     );
+  }
+
+  Widget _historySection() {
+    if (_history.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('生成履歴', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        ..._history.map((item) {
+          return Card(
+            child: ListTile(
+              title: Text('v${item['version']} • ${item['model'] ?? ''}'),
+              subtitle: Text(item['output_text'] ?? ''),
+            ),
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  Future<void> _sendInterpretationInput() async {
+    if (_inputSent || _result == null || _result is! Map) return;
+    _inputSent = true;
+    try {
+      final payload = _buildInterpretationInput(_result as Map);
+      await AppSession.instance.api.postJson('/interpretations/input', {
+        'reading_id': widget.readingId,
+        'input_json': payload,
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _loadInterpretation() async {
+    try {
+      final response = await AppSession.instance.api.getJson('/interpretations/${widget.readingId}');
+      if (!mounted) return;
+      setState(() {
+        _interpretation = response;
+        final input = response['input_json'];
+        if (input is Map) {
+          _questionController.text = input['question']?.toString() ?? '';
+          _contextController.text = input['context']?.toString() ?? '';
+        }
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _loadHistory() async {
+    try {
+      final response = await AppSession.instance.api.getJson('/interpretations/${widget.readingId}/history');
+      if (!mounted) return;
+      setState(() => _history = response['items'] as List<dynamic>);
+    } catch (_) {}
+  }
+
+  Future<void> _generateInterpretation() async {
+    setState(() => _generating = true);
+    try {
+      final response = await _generateWithRetry();
+      if (!mounted) return;
+      setState(() {
+        _interpretation = {
+          'output_text': response['output_text'],
+          'input_json': response['input_json'],
+        };
+      });
+      await _loadHistory();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('生成エラー: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _generating = false);
+    }
+  }
+
+  Map<String, dynamic> _buildInterpretationInput(Map result) {
+    final slots = result['slots'] as List<dynamic>? ?? [];
+    final cards = slots.map((slot) {
+      final card = slot['card'] ?? {};
+      return {
+        'position': slot['position'],
+        'card_name': card['name'],
+        'arcana': card['arcana'],
+        'suit': card['suit'],
+        'rank': card['rank'],
+        'upright': card['upright'],
+        'meaning_short': null,
+        'keywords': [],
+      };
+    }).toList();
+
+    final baseCard = result['base_card'];
+    if (baseCard != null) {
+      cards.insert(0, {
+        'position': 'base',
+        'card_name': baseCard['name'],
+        'arcana': baseCard['arcana'],
+        'suit': baseCard['suit'],
+        'rank': baseCard['rank'],
+        'upright': baseCard['upright'],
+        'meaning_short': null,
+        'keywords': [],
+      });
+    }
+
+    final extraCards = result['extra_cards'] as List<dynamic>?;
+    if (extraCards != null) {
+      for (final card in extraCards) {
+        cards.add({
+          'position': 'extra',
+          'card_name': card['name'],
+          'arcana': card['arcana'],
+          'suit': card['suit'],
+          'rank': card['rank'],
+          'upright': card['upright'],
+          'meaning_short': null,
+          'keywords': [],
+        });
+      }
+    }
+
+    return {
+      'type': result['type'],
+      'question': _questionController.text.trim(),
+      'context': _contextController.text.trim(),
+      'cards': cards,
+    };
+  }
+
+  Widget _questionSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCFAF6),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('質問事項', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _questionController,
+            decoration: const InputDecoration(labelText: '質問（任意）'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _contextController,
+            decoration: const InputDecoration(labelText: '補足（任意）'),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: _savingInput ? null : _saveInput,
+              child: _savingInput
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('質問事項を保存'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveInput() async {
+    if (_result == null || _result is! Map) return;
+    setState(() => _savingInput = true);
+    try {
+      final payload = _buildInterpretationInput(_result as Map);
+      await AppSession.instance.api.postJson('/interpretations/input', {
+        'reading_id': widget.readingId,
+        'input_json': payload,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('質問事項を保存しました')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('保存エラー: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _savingInput = false);
+    }
+  }
+
+  Future<Map<String, dynamic>> _generateWithRetry() async {
+    const attempts = 3;
+    var lastError = '';
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        return await AppSession.instance.api.postJson(
+          '/interpretations/generate?reading_id=${widget.readingId}',
+          {},
+        );
+      } catch (e) {
+        lastError = e.toString();
+        if (attempt == attempts) break;
+        await Future.delayed(Duration(milliseconds: 800 * attempt));
+      }
+    }
+    throw Exception(lastError);
   }
 }
