@@ -74,50 +74,70 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
     base_rng = random.Random(_seed_to_int(base_seed))
 
     if fortune_type_key.startswith('hexagram_'):
-        cards = _draw_cards(base_rng, 7, major_only=False)
+        cards = _draw_cards(base_rng, 7, major_only=False, include_upright=True)
         return {
             'type': 'hexagram',
             'cards': cards,
+            'slots': _make_slots(cards, ['1', '2', '3', '4', '5', '6', '7']),
             'seed': base_seed,
         }
 
     if fortune_type_key.startswith('celtic_'):
-        cards = _draw_cards(base_rng, 10, major_only=False)
+        cards = _draw_cards(base_rng, 10, major_only=False, include_upright=True)
         return {
             'type': 'celtic_cross',
             'cards': cards,
+            'slots': _make_slots(
+                cards,
+                [
+                    '現在',
+                    '課題',
+                    '過去',
+                    '未来',
+                    '顕在意識',
+                    '潜在意識',
+                    '自分',
+                    '周囲',
+                    '願望',
+                    '結果',
+                ],
+            ),
             'seed': base_seed,
         }
 
     if fortune_type_key == 'flower_timing':
-        cards = _draw_cards(base_rng, 12, major_only=True)
+        cards = _draw_cards(base_rng, 12, major_only=True, include_upright=False)
         return {
             'type': 'flower_timing',
             'cards': cards,
+            'slots': _make_slots(cards, [str(i) for i in range(1, 13)]),
             'seed': base_seed,
         }
 
     if fortune_type_key == 'triangle_crime':
-        cards = _draw_cards(base_rng, 3, major_only=False)
+        cards = _draw_cards(base_rng, 3, major_only=False, include_upright=True)
         return {
             'type': 'triangle_warning',
             'cards': cards,
+            'slots': _make_slots(cards, ['状況', '関係性', '注意点']),
             'seed': base_seed,
         }
 
     if fortune_type_key == 'no_desc_draw':
-        cards = _draw_cards(base_rng, 2, major_only=False)
+        cards = _draw_cards(base_rng, 2, major_only=False, include_upright=True)
         return {
             'type': 'no_desc_draw',
             'cards': cards,
+            'slots': _make_slots(cards, ['カード1', 'カード2']),
             'seed': base_seed,
         }
 
     if fortune_type_key == 'compatibility':
-        cards = _draw_cards(base_rng, 3, major_only=False)
+        cards = _draw_cards(base_rng, 3, major_only=False, include_upright=True)
         return {
             'type': 'compatibility',
             'cards': cards,
+            'slots': _make_slots(cards, ['あなた', '相手', '二人の未来']),
             'seed': base_seed,
             'input': input_json or {},
         }
@@ -125,44 +145,55 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
     if fortune_type_key.startswith('today_deep_'):
         deep_seed = f'{base_seed}:{fortune_type_key}'
         deep_rng = random.Random(_seed_to_int(deep_seed))
-        base_card = _draw_cards(base_rng, 1, major_only=False)[0]
-        extra_cards = _draw_cards(deep_rng, 4, major_only=False, exclude_names={base_card['name']})
+        base_card = _draw_cards(base_rng, 1, major_only=False, include_upright=True)[0]
+        extra_cards = _draw_cards(
+            deep_rng,
+            4,
+            major_only=False,
+            include_upright=True,
+            exclude_names={base_card['name']},
+        )
         return {
             'type': 'today_deep',
             'base_card': base_card,
             'extra_cards': extra_cards,
+            'slots': _make_slots(extra_cards, ['恋愛', '仕事', '金運', 'トラブル']),
             'seed': base_seed,
             'deep_seed': deep_seed,
         }
 
     if fortune_type_key == 'today_free':
-        cards = _draw_cards(base_rng, 1, major_only=False)
+        cards = _draw_cards(base_rng, 1, major_only=False, include_upright=True)
         return {
             'type': 'today_free',
             'cards': cards,
+            'slots': _make_slots(cards, ['今日']),
             'seed': base_seed,
         }
 
     if fortune_type_key == 'week_one':
-        cards = _draw_cards(base_rng, 5, major_only=False)
+        cards = _draw_cards(base_rng, 5, major_only=False, include_upright=True)
         return {
             'type': 'week_one',
             'cards': cards,
+            'slots': _make_slots(cards, ['総合', '恋愛', '仕事', '金運', 'トラブル']),
             'seed': base_seed,
         }
 
     if fortune_type_key == 'partner_sexual':
-        cards = _draw_cards(base_rng, 3, major_only=False)
+        cards = _draw_cards(base_rng, 3, major_only=False, include_upright=True)
         return {
             'type': 'partner_sexual',
             'cards': cards,
+            'slots': _make_slots(cards, ['表面', '深層', '相性']),
             'seed': base_seed,
         }
 
-    cards = _draw_cards(base_rng, 1, major_only=False)
+    cards = _draw_cards(base_rng, 1, major_only=False, include_upright=True)
     return {
         'type': 'single_draw',
         'cards': cards,
+        'slots': _make_slots(cards, ['カード']),
         'seed': base_seed,
     }
 
@@ -171,6 +202,7 @@ def _draw_cards(
     rng: random.Random,
     count: int,
     major_only: bool,
+    include_upright: bool,
     exclude_names: set[str] | None = None,
 ) -> list[dict]:
     deck = MAJOR_DECK if major_only else FULL_DECK
@@ -192,7 +224,15 @@ def _draw_cards(
                 'arcana': base['arcana'],
                 'suit': base.get('suit'),
                 'rank': base.get('rank'),
-                'upright': rng.choice([True, False]),
+                'upright': rng.choice([True, False]) if include_upright else None,
             }
         )
     return cards
+
+
+def _make_slots(cards: list[dict], positions: list[str]) -> list[dict]:
+    slots = []
+    for idx, card in enumerate(cards):
+        position = positions[idx] if idx < len(positions) else f'位置{idx + 1}'
+        slots.append({'position': position, 'card': card})
+    return slots
