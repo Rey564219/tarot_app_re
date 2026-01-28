@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../app_session.dart';
 import 'reading_screen.dart';
 
 class BundleScreen extends StatelessWidget {

@@ -9,7 +9,7 @@ class AppSession {
 
   static final AppSession instance = AppSession._();
 
-  final ApiClient api = ApiClient(baseUrl: 'http://localhost:8000');
+  final ApiClient api = ApiClient(baseUrl: 'http://10.0.2.2:8000');
 
   static const _tokenKey = 'auth_token';
   static const _userIdKey = 'user_id';
