@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
 
-from ..config import AD_REWARD_MAX_PER_DAY, AD_REWARD_MAX_PER_HOUR
+from ..config import AD_REWARD_MAX_PER_DAY, AD_REWARD_MAX_PER_HOUR, ADMIN_LIFE_OVERRIDE
 from ..db import get_conn
-from .security import get_user_id
+from .security import get_user_id, is_admin_user
 
 router = APIRouter(prefix='', tags=['life'])
 
@@ -27,6 +27,12 @@ def get_life(user_id: str = Depends(get_user_id)):
             row = cur.fetchone()
 
     if not row:
+        if is_admin_user(user_id):
+            return {
+                'current_life': ADMIN_LIFE_OVERRIDE,
+                'max_life': ADMIN_LIFE_OVERRIDE,
+                'updated_at': None,
+            }
         raise HTTPException(status_code=404, detail='Life not found')
 
     return {'current_life': row[0], 'max_life': row[1], 'updated_at': row[2]}

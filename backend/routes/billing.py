@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from ..db import get_conn
 from ..services import billing as billing_service
-from .security import get_user_id
+from .security import get_user_id, is_admin_user
 
 router = APIRouter(prefix='/billing', tags=['billing'])
 
@@ -108,6 +108,13 @@ def verify_subscription(payload: SubscriptionVerifyRequest, user_id: str = Depen
 
 @router.get('/status')
 def billing_status(user_id: str = Depends(get_user_id)):
+    if is_admin_user(user_id):
+        return {
+            'subscription_active': True,
+            'subscription_expires_at': None,
+            'ads_disabled': True,
+        }
+
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(

@@ -1,11 +1,20 @@
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 def env(name, default=None):
     return os.environ.get(name, default)
 
 
-DATABASE_URL = env('DATABASE_URL')
+def env_list(name, default=''):
+    raw = env(name, default) or ''
+    return [value.strip() for value in raw.split(',') if value.strip()]
+
+
+DATABASE_URL = env('DATABASE_URL', 'postgresql://tarot_user:admin1234@localhost:5432/tarot_db')
 
 # Auth/JWT
 JWT_SECRET = env('JWT_SECRET', 'dev-secret')
@@ -29,3 +38,7 @@ AD_REWARD_MAX_PER_DAY = int(env('AD_REWARD_MAX_PER_DAY', '20'))
 
 # Dev fallback
 ALLOW_X_USER_ID_FALLBACK = env('ALLOW_X_USER_ID_FALLBACK', 'true').lower() == 'true'
+
+# Admin testing helpers
+ADMIN_USER_IDS = set(env_list('ADMIN_USER_IDS', 'e154d397-dff7-4780-b5c4-5aa3a3889a7d'))
+ADMIN_LIFE_OVERRIDE = int(env('ADMIN_LIFE_OVERRIDE', '99'))

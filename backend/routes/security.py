@@ -2,7 +2,11 @@ from fastapi import Header, HTTPException
 from jwt import ExpiredSignatureError, InvalidTokenError
 
 from ..auth_tokens import decode_access_token
-from ..config import ALLOW_X_USER_ID_FALLBACK
+from ..config import ADMIN_USER_IDS, ALLOW_X_USER_ID_FALLBACK
+
+
+def is_admin_user(user_id: str) -> bool:
+    return user_id in ADMIN_USER_IDS
 
 
 def get_user_id(

@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from psycopg.types.json import Json
 
 from ..db import get_conn
 from ..services.claude import ClaudeClient
+from ..services.card_meanings import get_card_meaning
 from ..services.interpretation_prompt import build_prompt
 from .security import get_user_id
 
@@ -35,7 +37,7 @@ def save_interpretation_input(payload: InterpretationInputRequest, user_id: str 
             enriched = _enrich_input(cur, payload.input_json)
             cur.execute(
                 'INSERT INTO reading_interpretations (reading_id, input_json) VALUES (%s, %s) ON CONFLICT (reading_id) DO UPDATE SET input_json = EXCLUDED.input_json',
-                (payload.reading_id, enriched),
+                (payload.reading_id, Json(enriched)),
             )
             conn.commit()
 
@@ -57,7 +59,7 @@ def save_interpretation_output(payload: InterpretationOutputRequest, user_id: st
                 raise HTTPException(status_code=404, detail='Reading not found')
             cur.execute(
                 'INSERT INTO reading_interpretations (reading_id, input_json, output_text) VALUES (%s, %s, %s) ON CONFLICT (reading_id) DO UPDATE SET output_text = EXCLUDED.output_text',
-                (payload.reading_id, {}, payload.output_text),
+                (payload.reading_id, Json({}), payload.output_text),
             )
             conn.commit()
 
@@ -195,7 +197,16 @@ def _enrich_input(cur, input_json: dict) -> dict:
         orient = orientation_key(card)
         meaning = meaning_map.get(name, {}).get(orient)
         if not meaning:
-            enriched_cards.append(card)
+            fallback = get_card_meaning(name, card.get('upright'))
+            if not fallback:
+                enriched_cards.append(card)
+                continue
+            updated = dict(card)
+            if not updated.get('meaning_short'):
+                updated['meaning_short'] = fallback.get('short_meaning')
+            if not updated.get('keywords'):
+                updated['keywords'] = fallback.get('keywords') or []
+            enriched_cards.append(updated)
             continue
         updated = dict(card)
         if not updated.get('meaning_short'):

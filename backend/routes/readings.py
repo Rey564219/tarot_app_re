@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
 
+from psycopg.types.json import Json
+
 from ..db import get_conn
 from ..services.readings import generate_reading, build_seed
-from .security import get_user_id
+from .security import get_user_id, is_admin_user
 
 router = APIRouter(prefix='/readings', tags=['readings'])
 
@@ -54,10 +56,11 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
     if not ft:
         raise HTTPException(status_code=404, detail='Fortune type not found')
 
+    admin_user = is_admin_user(user_id)
     fortune_type_id, access_type_default, requires_warning = ft
     access_type_used = access_type_default
 
-    if requires_warning:
+    if requires_warning and not admin_user:
         cur.execute(
             "SELECT id FROM warnings_acceptance WHERE user_id = %s AND fortune_type_id = %s AND accepted_at > now() - interval '5 minutes' ORDER BY accepted_at DESC LIMIT 1",
             (user_id, fortune_type_id),
@@ -65,7 +68,7 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
         if not cur.fetchone():
             raise HTTPException(status_code=409, detail='Warning acceptance required')
 
-    if access_type_default == 'subscription':
+    if access_type_default == 'subscription' and not admin_user:
         cur.execute(
             'SELECT id FROM subscriptions WHERE user_id = %s AND status = %s AND current_period_end > now() LIMIT 1',
             (user_id, 'active'),
@@ -73,7 +76,7 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
         if not cur.fetchone():
             raise HTTPException(status_code=403, detail='Subscription required')
 
-    if access_type_default == 'one_time':
+    if access_type_default == 'one_time' and not admin_user:
         cur.execute(
             'SELECT p.id FROM purchases p JOIN products pr ON p.product_id = pr.id WHERE p.user_id = %s AND p.status = %s AND pr.fortune_type_id = %s LIMIT 1',
             (user_id, 'verified', fortune_type_id),
@@ -81,7 +84,7 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
         if not cur.fetchone():
             raise HTTPException(status_code=403, detail='Purchase required')
 
-    if access_type_default == 'life':
+    if access_type_default == 'life' and not admin_user:
         cur.execute(
             'SELECT id FROM subscriptions WHERE user_id = %s AND status = %s AND current_period_end > now() LIMIT 1',
             (user_id, 'active'),
@@ -111,7 +114,15 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
     reading_id = str(uuid4())
     cur.execute(
         'INSERT INTO readings (id, user_id, fortune_type_id, access_type, input_json, result_json, seed) VALUES (%s, %s, %s, %s, %s, %s, %s)',
-        (reading_id, user_id, fortune_type_id, access_type_used, input_json or {}, result_json, seed),
+        (
+            reading_id,
+            user_id,
+            fortune_type_id,
+            access_type_used,
+            Json(input_json or {}),
+            Json(result_json),
+            seed,
+        ),
     )
     return reading_id, result_json
 
@@ -119,12 +130,19 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
 @router.get('')
 def list_readings(limit: int = 20, user_id: str = Depends(get_user_id)):
     limit = min(limit, 100)
+    admin_user = is_admin_user(user_id)
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                'SELECT id, fortune_type_id, access_type, input_json, result_json, seed, created_at FROM readings WHERE user_id = %s ORDER BY created_at DESC LIMIT %s',
-                (user_id, limit),
-            )
+            if admin_user:
+                cur.execute(
+                    'SELECT id, fortune_type_id, access_type, input_json, result_json, seed, created_at FROM readings ORDER BY created_at DESC LIMIT %s',
+                    (limit,),
+                )
+            else:
+                cur.execute(
+                    'SELECT id, fortune_type_id, access_type, input_json, result_json, seed, created_at FROM readings WHERE user_id = %s ORDER BY created_at DESC LIMIT %s',
+                    (user_id, limit),
+                )
             rows = cur.fetchall()
 
     items = [
@@ -145,12 +163,19 @@ def list_readings(limit: int = 20, user_id: str = Depends(get_user_id)):
 
 @router.get('/{reading_id}')
 def get_reading(reading_id: str, user_id: str = Depends(get_user_id)):
+    admin_user = is_admin_user(user_id)
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                'SELECT id, fortune_type_id, access_type, input_json, result_json, seed, created_at FROM readings WHERE user_id = %s AND id = %s',
-                (user_id, reading_id),
-            )
+            if admin_user:
+                cur.execute(
+                    'SELECT id, fortune_type_id, access_type, input_json, result_json, seed, created_at FROM readings WHERE id = %s',
+                    (reading_id,),
+                )
+            else:
+                cur.execute(
+                    'SELECT id, fortune_type_id, access_type, input_json, result_json, seed, created_at FROM readings WHERE user_id = %s AND id = %s',
+                    (user_id, reading_id),
+                )
             row = cur.fetchone()
 
     if not row:

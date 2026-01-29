@@ -77,6 +77,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         cards = _draw_cards(base_rng, 7, major_only=False, include_upright=True)
         return {
             'type': 'hexagram',
+            'fortune_type_key': fortune_type_key,
             'cards': cards,
             'slots': _make_slots(cards, ['1', '2', '3', '4', '5', '6', '7']),
             'seed': base_seed,
@@ -86,6 +87,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         cards = _draw_cards(base_rng, 10, major_only=False, include_upright=True)
         return {
             'type': 'celtic_cross',
+            'fortune_type_key': fortune_type_key,
             'cards': cards,
             'slots': _make_slots(
                 cards,
@@ -109,6 +111,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         cards = _draw_cards(base_rng, 12, major_only=True, include_upright=False)
         return {
             'type': 'flower_timing',
+            'fortune_type_key': fortune_type_key,
             'cards': cards,
             'slots': _make_slots(cards, [str(i) for i in range(1, 13)]),
             'seed': base_seed,
@@ -118,6 +121,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         cards = _draw_cards(base_rng, 3, major_only=False, include_upright=True)
         return {
             'type': 'triangle_warning',
+            'fortune_type_key': fortune_type_key,
             'cards': cards,
             'slots': _make_slots(cards, ['状況', '関係性', '注意点']),
             'seed': base_seed,
@@ -127,6 +131,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         cards = _draw_cards(base_rng, 2, major_only=False, include_upright=True)
         return {
             'type': 'no_desc_draw',
+            'fortune_type_key': fortune_type_key,
             'cards': cards,
             'slots': _make_slots(cards, ['カード1', 'カード2']),
             'seed': base_seed,
@@ -136,6 +141,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         cards = _draw_cards(base_rng, 3, major_only=False, include_upright=True)
         return {
             'type': 'compatibility',
+            'fortune_type_key': fortune_type_key,
             'cards': cards,
             'slots': _make_slots(cards, ['あなた', '相手', '二人の未来']),
             'seed': base_seed,
@@ -155,6 +161,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         )
         return {
             'type': 'today_deep',
+            'fortune_type_key': fortune_type_key,
             'base_card': base_card,
             'extra_cards': extra_cards,
             'slots': _make_slots(extra_cards, ['恋愛', '仕事', '金運', 'トラブル']),
@@ -166,6 +173,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         cards = _draw_cards(base_rng, 1, major_only=False, include_upright=True)
         return {
             'type': 'today_free',
+            'fortune_type_key': fortune_type_key,
             'cards': cards,
             'slots': _make_slots(cards, ['今日']),
             'seed': base_seed,
@@ -175,6 +183,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         cards = _draw_cards(base_rng, 5, major_only=False, include_upright=True)
         return {
             'type': 'week_one',
+            'fortune_type_key': fortune_type_key,
             'cards': cards,
             'slots': _make_slots(cards, ['総合', '恋愛', '仕事', '金運', 'トラブル']),
             'seed': base_seed,
@@ -184,6 +193,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
         cards = _draw_cards(base_rng, 3, major_only=False, include_upright=True)
         return {
             'type': 'partner_sexual',
+            'fortune_type_key': fortune_type_key,
             'cards': cards,
             'slots': _make_slots(cards, ['表面', '深層', '相性']),
             'seed': base_seed,
@@ -192,6 +202,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
     cards = _draw_cards(base_rng, 1, major_only=False, include_upright=True)
     return {
         'type': 'single_draw',
+        'fortune_type_key': fortune_type_key,
         'cards': cards,
         'slots': _make_slots(cards, ['カード']),
         'seed': base_seed,

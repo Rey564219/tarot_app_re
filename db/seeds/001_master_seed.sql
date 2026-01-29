@@ -2,12 +2,12 @@ BEGIN;
 
 INSERT INTO fortune_types (id, key, name, access_type_default, requires_warning, description)
 VALUES
-  ('ccadbb01-cacb-4cce-9376-405e07f93216', 'today_free', '今日の運勢 1枚', 'free', false, NULL),
+  ('ccadbb01-cacb-4cce-9376-405e07f93216', 'today_free', '今日の運勢 1枚引き', 'free', false, NULL),
   ('514f3999-2a0d-46b1-a083-18186f63a868', 'today_deep_love', '今日の運勢 深掘り(恋愛)', 'subscription', false, NULL),
   ('9ee6bbdb-d864-4115-9a30-4dbc3be8ee84', 'today_deep_work', '今日の運勢 深掘り(仕事)', 'subscription', false, NULL),
   ('38037bd0-e462-4e6a-b102-eb651dee5a60', 'today_deep_money', '今日の運勢 深掘り(金運)', 'subscription', false, NULL),
   ('1adc5555-4a7f-44f0-9475-7f8dc19f5ba8', 'today_deep_trouble', '今日の運勢 深掘り(トラブル)', 'subscription', false, NULL),
-  ('171de1cc-b127-496d-9830-fae2c2cf506d', 'week_one', '今週の日運 1枚', 'subscription', false, NULL),
+  ('171de1cc-b127-496d-9830-fae2c2cf506d', 'week_one', '今週の運勢 1枚引き', 'subscription', false, NULL),
   ('8f6330fd-1189-4730-8d34-1846f9f86e33', 'no_desc_draw', '説明なしカード引き', 'life', false, NULL),
   ('d72aebe4-5723-4621-b5c1-42fb4637903d', 'compatibility', '相手との相性占い', 'free', false, NULL),
   ('ea3fc9e9-fac9-40b4-8699-e82f6511f8b4', 'hexagram_love', '悩み別ヘキサグラム(恋愛)', 'one_time', false, NULL),
@@ -17,7 +17,7 @@ VALUES
   ('ca4a1218-d4a5-4c64-8a6d-e47f2f3a7152', 'celtic_work', '悩み別ケルト十字(仕事)', 'one_time', false, NULL),
   ('803fb304-fcbc-4c64-82d3-b783bdd8909b', 'celtic_startup', '悩み別ケルト十字(起業)', 'one_time', false, NULL),
   ('35f0bac0-8aa0-46bc-9828-f06d7c3206ea', 'celtic_job', '悩み別ケルト十字(転職)', 'one_time', false, NULL),
-  ('c16ddcc1-6de2-4fe2-a4da-515638517652', 'flower_timing', 'いつ動く？時期読み(花占い)', 'one_time', false, NULL),
+  ('c16ddcc1-6de2-4fe2-a4da-515638517652', 'flower_timing', '行動の時期読み(花占い)', 'one_time', false, NULL),
   ('99b953f1-a9c2-4c0c-9bf0-47b2fcc398d0', 'triangle_crime', '犯罪の不正のトライアングル', 'one_time', true, NULL),
   ('a01ffd76-7a5a-415a-b596-b2c8b0c5bfa5', 'partner_sexual', '相手の性癖占い', 'one_time', false, NULL)
 ON CONFLICT (key) DO UPDATE SET
@@ -42,8 +42,8 @@ VALUES
   ('3b60237d-48c2-4f1a-a8e1-82df363d79aa', 'p_celtic_startup_android', (SELECT id FROM fortune_types WHERE key = 'celtic_startup'), '悩み別ケルト十字(起業)', 1200, 'JPY', 'android', true),
   ('ec7a6a7a-0c09-4775-90a6-68064819c5f1', 'p_celtic_job', (SELECT id FROM fortune_types WHERE key = 'celtic_job'), '悩み別ケルト十字(転職)', 1200, 'JPY', 'ios', true),
   ('08a4d7bb-9b9c-4667-881c-fa8791386775', 'p_celtic_job_android', (SELECT id FROM fortune_types WHERE key = 'celtic_job'), '悩み別ケルト十字(転職)', 1200, 'JPY', 'android', true),
-  ('65b8cb86-3856-4788-b688-0b304d01bd2e', 'p_flower_timing', (SELECT id FROM fortune_types WHERE key = 'flower_timing'), 'いつ動く？時期読み(花占い)', 800, 'JPY', 'ios', true),
-  ('dce445b3-8dc4-496d-8eab-64f4fa8977a8', 'p_flower_timing_android', (SELECT id FROM fortune_types WHERE key = 'flower_timing'), 'いつ動く？時期読み(花占い)', 800, 'JPY', 'android', true),
+  ('65b8cb86-3856-4788-b688-0b304d01bd2e', 'p_flower_timing', (SELECT id FROM fortune_types WHERE key = 'flower_timing'), '行動の時期読み(花占い)', 800, 'JPY', 'ios', true),
+  ('dce445b3-8dc4-496d-8eab-64f4fa8977a8', 'p_flower_timing_android', (SELECT id FROM fortune_types WHERE key = 'flower_timing'), '行動の時期読み(花占い)', 800, 'JPY', 'android', true),
   ('f6969543-5410-475e-a625-aaacc5ab5ccf', 'p_triangle_crime', (SELECT id FROM fortune_types WHERE key = 'triangle_crime'), '犯罪の不正のトライアングル', 1500, 'JPY', 'ios', true),
   ('a59b5ec0-1722-48e0-8d66-ea2dccf6f4a2', 'p_triangle_crime_android', (SELECT id FROM fortune_types WHERE key = 'triangle_crime'), '犯罪の不正のトライアングル', 1500, 'JPY', 'android', true),
   ('9c37489e-a339-43db-90c8-00420f3b986f', 'p_partner_sexual', (SELECT id FROM fortune_types WHERE key = 'partner_sexual'), '相手の性癖占い', 900, 'JPY', 'ios', true),
