@@ -69,7 +69,7 @@ class _ProductScreenState extends State<ProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('商品詳細')),
+      appBar: AppBar(title: const Text('啁E��詳細')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: _loading
@@ -86,17 +86,16 @@ class _ProductScreenState extends State<ProductScreen> {
                       const SizedBox(height: 8),
                       Text('価格: ¥${_product?['price_cents']} ${_product?['currency']}'),
                       const SizedBox(height: 8),
-                      Text('プラットフォーム: ${_product?['platform']}'),
                       const SizedBox(height: 16),
                       const Text(
-                        '購入はストア連携が必要です。ここではバックエンド接続の確認用に「実行」できます。',
+                        '購入はストア連携が忁E��です。ここではバックエンド接続�E確認用に「実行」できます、E,
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _fortuneType == null ? null : _execute,
-                          child: const Text('実行（テスト用）'),
+                          child: const Text('実行（テスト用�E�E),
                         ),
                       ),
                     ],

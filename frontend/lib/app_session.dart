@@ -9,7 +9,13 @@ class AppSession {
 
   static final AppSession instance = AppSession._();
 
-  final ApiClient api = ApiClient(baseUrl: 'http://10.19.243.10:8000');
+  static const _defaultBaseUrl = 'http://127.0.0.1:8000';
+  static const _baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: _defaultBaseUrl,
+  );
+
+  final ApiClient api = ApiClient(baseUrl: _baseUrl);
 
   static const _tokenKey = 'auth_token';
   static const _userIdKey = 'user_id';

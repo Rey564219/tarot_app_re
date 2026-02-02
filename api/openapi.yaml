@@ -23,7 +23,7 @@ paths:
   /auth/oauth:
     post:
       security: []
-      summary: OAuth sign-in (Apple/Google)
+      summary: OAuth sign-in (Google)
       requestBody:
         required: true
         content:
@@ -420,7 +420,7 @@ components:
       properties:
         provider:
           type: string
-          enum: [apple, google]
+          enum: [google]
         id_token:
           type: string
     FortuneType:
@@ -572,7 +572,7 @@ components:
       properties:
         platform:
           type: string
-          enum: [ios, android]
+          enum: [android]
         receipt:
           type: string
         product_key:
@@ -583,7 +583,7 @@ components:
       properties:
         platform:
           type: string
-          enum: [ios, android]
+          enum: [android]
         receipt:
           type: string
     BillingStatus:

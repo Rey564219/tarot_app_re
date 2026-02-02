@@ -2,9 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routes import auth, master, life, readings, warnings, billing, affiliate, consultation, interpretations
+from .services.claude import ClaudeClient
 
 
 def create_app() -> FastAPI:
+    ClaudeClient().validate_model_name()
     app = FastAPI(title='Tarot App API')
     app.add_middleware(
         CORSMiddleware,

@@ -64,7 +64,6 @@ class _ShopScreenState extends State<ShopScreen> {
             return FortuneCard(
               title: fortuneType?['name'] ?? product['name'],
               subtitle: '¥${product['price_cents']} ${product['currency']}',
-              badge: product['platform'].toString().toUpperCase(),
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(

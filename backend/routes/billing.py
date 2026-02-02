@@ -24,17 +24,12 @@ class SubscriptionVerifyRequest(BaseModel):
 @router.post('/verify/purchase')
 def verify_purchase(payload: PurchaseVerifyRequest, user_id: str = Depends(get_user_id)):
     platform = payload.platform
-    if platform not in ('ios', 'android'):
+    if platform != 'android':
         raise HTTPException(status_code=400, detail='Invalid platform')
 
-    if platform == 'ios':
-        data = billing_service.verify_apple_receipt(payload.receipt)
-        purchase = billing_service.extract_apple_purchase(data)
-        store_transaction_id = purchase.get('transaction_id')
-    else:
-        package_name = billing_service.resolve_google_package()
-        purchase = billing_service.verify_google_product(package_name, payload.product_key, payload.receipt)
-        store_transaction_id = purchase.get('transaction_id')
+    package_name = billing_service.resolve_google_package()
+    purchase = billing_service.verify_google_product(package_name, payload.product_key, payload.receipt)
+    store_transaction_id = purchase.get('transaction_id')
 
     if not store_transaction_id:
         raise HTTPException(status_code=409, detail='Missing transaction id')
@@ -61,27 +56,18 @@ def verify_purchase(payload: PurchaseVerifyRequest, user_id: str = Depends(get_u
 @router.post('/verify/subscription')
 def verify_subscription(payload: SubscriptionVerifyRequest, user_id: str = Depends(get_user_id)):
     platform = payload.platform
-    if platform not in ('ios', 'android'):
+    if platform != 'android':
         raise HTTPException(status_code=400, detail='Invalid platform')
 
-    if platform == 'ios':
-        data = billing_service.verify_apple_receipt(payload.receipt)
-        sub = billing_service.extract_apple_subscription(data)
-        store_subscription_id = sub.get('product_id')
-        period_start = sub.get('period_start')
-        period_end = sub.get('period_end')
-        status = sub.get('status')
-        auto_renew = True
-    else:
-        if not payload.subscription_id:
-            raise HTTPException(status_code=400, detail='Missing subscription_id')
-        package_name = billing_service.resolve_google_package()
-        sub = billing_service.verify_google_subscription(package_name, payload.subscription_id, payload.receipt)
-        store_subscription_id = sub.get('product_id')
-        period_start = sub.get('period_start')
-        period_end = sub.get('period_end')
-        status = sub.get('status')
-        auto_renew = sub.get('auto_renewing', False)
+    if not payload.subscription_id:
+        raise HTTPException(status_code=400, detail='Missing subscription_id')
+    package_name = billing_service.resolve_google_package()
+    sub = billing_service.verify_google_subscription(package_name, payload.subscription_id, payload.receipt)
+    store_subscription_id = sub.get('product_id')
+    period_start = sub.get('period_start')
+    period_end = sub.get('period_end')
+    status = sub.get('status')
+    auto_renew = sub.get('auto_renewing', False)
 
     if not store_subscription_id or not period_start or not period_end:
         raise HTTPException(status_code=409, detail='Invalid subscription data')
