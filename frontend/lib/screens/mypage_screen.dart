@@ -89,6 +89,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
         children: [
           if (_loading) const Center(child: CircularProgressIndicator()),
           if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
+          if (AppSession.instance.userId != null)
+            _statusCard('User ID', AppSession.instance.userId!),
           _statusCard('サブスク状態', subActive ? '有効' : '未加入'),
           _statusCard('広告非表示', _billing?['ads_disabled'] == true ? 'ON' : 'OFF'),
           const SizedBox(height: 16),

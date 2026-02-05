@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from uuid import uuid4
 
 from ..auth_tokens import create_access_token
 from ..db import get_conn
+from ..config import ENABLE_DEV_AUTH, DEV_AUTH_TOKEN
 from ..services import oauth as oauth_service
 
 router = APIRouter(prefix='/auth', tags=['auth'])
@@ -12,6 +13,10 @@ router = APIRouter(prefix='/auth', tags=['auth'])
 class OAuthRequest(BaseModel):
     provider: str
     id_token: str
+
+
+class DevAuthRequest(BaseModel):
+    user_id: str
 
 
 @router.post('/anonymous')
@@ -75,3 +80,31 @@ def oauth_sign_in(payload: OAuthRequest):
 
     token = create_access_token(user_id)
     return {'token': token, 'user_id': user_id}
+
+
+@router.post('/dev')
+def dev_sign_in(payload: DevAuthRequest, x_dev_token: str | None = Header(default=None)):
+    if not ENABLE_DEV_AUTH:
+        raise HTTPException(status_code=404, detail='Not found')
+    if not DEV_AUTH_TOKEN or x_dev_token != DEV_AUTH_TOKEN:
+        raise HTTPException(status_code=403, detail='Invalid dev token')
+    if not payload.user_id:
+        raise HTTPException(status_code=400, detail='Missing user_id')
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT id FROM users WHERE id = %s', (payload.user_id,))
+            if not cur.fetchone():
+                cur.execute('INSERT INTO users (id) VALUES (%s)', (payload.user_id,))
+                cur.execute(
+                    'INSERT INTO user_auth_providers (id, user_id, provider, provider_user_id) VALUES (%s, %s, %s, %s)',
+                    (str(uuid4()), payload.user_id, 'dev', payload.user_id),
+                )
+                cur.execute(
+                    'INSERT INTO user_lives (user_id, current_life, max_life) VALUES (%s, %s, %s)',
+                    (payload.user_id, 5, 5),
+                )
+            conn.commit()
+
+    token = create_access_token(payload.user_id)
+    return {'token': token, 'user_id': payload.user_id}

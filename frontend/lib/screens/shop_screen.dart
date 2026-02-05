@@ -32,9 +32,10 @@ class _ShopScreenState extends State<ShopScreen> {
     try {
       final types = await AppSession.instance.api.getList('/master/fortune-types');
       final products = await AppSession.instance.api.getList('/master/products');
+      final filtered = products.where((p) => p['platform'] == null || p['platform'] == 'android').toList();
       setState(() {
         _fortuneTypes = types;
-        _products = products;
+        _products = filtered;
       });
     } catch (e) {
       setState(() => _error = e.toString());

@@ -3,10 +3,20 @@ import 'package:flutter/material.dart';
 import '../app_session.dart';
 
 class ReadingScreen extends StatefulWidget {
-  const ReadingScreen({super.key, required this.readingId, this.resultJson});
+  const ReadingScreen({
+    super.key,
+    required this.readingId,
+    this.resultJson,
+    this.initialQuestion,
+    this.initialContext,
+    this.allowManualAi = true,
+  });
 
   final String readingId;
   final dynamic resultJson;
+  final String? initialQuestion;
+  final String? initialContext;
+  final bool allowManualAi;
 
   @override
   State<ReadingScreen> createState() => _ReadingScreenState();
@@ -29,6 +39,12 @@ class _ReadingScreenState extends State<ReadingScreen> {
   void initState() {
     super.initState();
     _result = widget.resultJson;
+    if (widget.initialQuestion != null && widget.initialQuestion!.isNotEmpty) {
+      _questionController.text = widget.initialQuestion!;
+    }
+    if (widget.initialContext != null && widget.initialContext!.isNotEmpty) {
+      _contextController.text = widget.initialContext!;
+    }
     if (_result == null) {
       _fetch();
     } else {
@@ -126,26 +142,13 @@ class _ReadingScreenState extends State<ReadingScreen> {
             );
           }).toList(),
         ],
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _generating ? null : _generateInterpretation,
-            icon: _generating
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.auto_awesome),
-            label: Text(_generating ? '生成中...' : 'AI解釈を生成'),
-          ),
-        ),
+        
         const SizedBox(height: 16),
+
         _aiPlaceholder(),
         const SizedBox(height: 12),
-        _historySection(),
-        if (_showRawJson(result)) ...[
+        if (widget.allowManualAi) _historySection(),
+        if (widget.allowManualAi && _showRawJson(result)) ...[
           const SizedBox(height: 16),
           Text('Raw JSON', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),

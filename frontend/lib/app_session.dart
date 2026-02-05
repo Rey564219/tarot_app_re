@@ -14,6 +14,8 @@ class AppSession {
     'API_BASE_URL',
     defaultValue: _defaultBaseUrl,
   );
+  static const _devUserId = String.fromEnvironment('DEV_USER_ID', defaultValue: '');
+  static const _devAuthToken = String.fromEnvironment('DEV_AUTH_TOKEN', defaultValue: '');
 
   final ApiClient api = ApiClient(baseUrl: _baseUrl);
 
@@ -38,9 +40,19 @@ class AppSession {
   }
 
   Future<void> _bootstrapAuth(SharedPreferences prefs) async {
-    final response = await api.postJson('/auth/anonymous', {});
-    _token = response['token'] as String?;
-    _userId = response['user_id'] as String?;
+    if (_devUserId.isNotEmpty && _devAuthToken.isNotEmpty) {
+      final response = await api.postJsonWithHeaders(
+        '/auth/dev',
+        {'user_id': _devUserId},
+        {'X-Dev-Token': _devAuthToken},
+      );
+      _token = response['token'] as String?;
+      _userId = response['user_id'] as String?;
+    } else {
+      final response = await api.postJson('/auth/anonymous', {});
+      _token = response['token'] as String?;
+      _userId = response['user_id'] as String?;
+    }
     if (_token == null || _userId == null) {
       throw Exception('Auth bootstrap failed');
     }

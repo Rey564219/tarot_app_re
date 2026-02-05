@@ -37,3 +37,10 @@ ALLOW_X_USER_ID_FALLBACK = env('ALLOW_X_USER_ID_FALLBACK', 'true').lower() == 't
 # Admin testing helpers
 ADMIN_USER_IDS = set(env_list('ADMIN_USER_IDS', 'e154d397-dff7-4780-b5c4-5aa3a3889a7d'))
 ADMIN_LIFE_OVERRIDE = int(env('ADMIN_LIFE_OVERRIDE', '99'))
+
+# Testing helpers
+DISABLE_INTERPRETATION_LIMITS = env('DISABLE_INTERPRETATION_LIMITS', 'false').lower() == 'true'
+
+# Dev-only auth
+ENABLE_DEV_AUTH = env('ENABLE_DEV_AUTH', 'false').lower() == 'true'
+DEV_AUTH_TOKEN = env('DEV_AUTH_TOKEN', '')

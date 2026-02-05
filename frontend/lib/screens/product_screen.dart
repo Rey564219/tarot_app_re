@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../app_session.dart';
-import 'reading_screen.dart';
+import '../widgets/app_scaffold.dart';
+import 'question_screen.dart';
 
 class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key, required this.productId});
@@ -45,62 +46,85 @@ class _ProductScreenState extends State<ProductScreen> {
     }
   }
 
-  Future<void> _execute() async {
-    try {
-      final response = await AppSession.instance.api.postJson('/readings/execute', {
-        'fortune_type_key': _fortuneType!['key'],
-      });
-      final readingId = response['reading_id'] as String;
-      final result = response['result_json'];
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ReadingScreen(readingId: readingId, resultJson: result),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('実行エラー: $e')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('啁E��詳細')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-                ? Text(_error!, style: const TextStyle(color: Colors.red))
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _fortuneType?['name'] ?? _product?['name'] ?? '',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text('価格: ¥${_product?['price_cents']} ${_product?['currency']}'),
-                      const SizedBox(height: 8),
-                      const SizedBox(height: 16),
-                      const Text(
-                        '購入はストア連携が忁E��です。ここではバックエンド接続�E確認用に「実行」できます、E,
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _fortuneType == null ? null : _execute,
-                          child: const Text('実行（テスト用�E�E),
-                        ),
-                      ),
+    final title = _fortuneType?['name'] ?? _product?['name'] ?? 'Product';
+    final description = _fortuneType?['description'];
+    return AppScaffold(
+      title: '商品詳細',
+      subtitle: '内容を確認して、カードを引いてください。',
+      actions: [
+        IconButton(icon: const Icon(Icons.refresh), onPressed: _loadProduct),
+      ],
+      child: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Text(_error!, style: const TextStyle(color: Colors.red))
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 8),
+                    Text(
+                      _formatPrice(_product),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    if (description != null && description.toString().trim().isNotEmpty) ...[
+                      Text(description.toString(), style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(height: 12),
                     ],
-                  ),
-      ),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFCFAF6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'ワンタイム鑑定です。カードを引いた後に結果が表示されます。',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _fortuneType == null
+                            ? null
+                            : () {
+                                final accessType = _fortuneType?['access_type_default']?.toString();
+                                final showAiInterpretation = true;
+                                final allowManualAi = accessType != 'one_time';
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => QuestionScreen(
+                                      title: title,
+                                      fortuneTypeKey: _fortuneType!['key'],
+                                      showAiInterpretation: showAiInterpretation,
+                                      allowManualAi: allowManualAi,
+                                    ),
+                                  ),
+                                );
+                              },
+                        icon: const Icon(Icons.style),
+                        label: const Text('カードを引く'),
+                      ),
+                    ),
+                  ],
+                ),
     );
+  }
+
+  String _formatPrice(Map<String, dynamic>? product) {
+    if (product == null) return '';
+    final priceCents = product['price_cents'];
+    final currencyRaw = product['currency']?.toString().toUpperCase() ?? '';
+    if (priceCents is num) {
+      if (currencyRaw == 'JPY') {
+        return '価格: \u00a5${priceCents.toInt()}';
+      }
+      final value = (priceCents / 100).toStringAsFixed(2);
+      return '価格: $value $currencyRaw';
+    }
+    return '価格: $priceCents $currencyRaw';
   }
 }

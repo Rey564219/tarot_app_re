@@ -36,6 +36,19 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  Future<Map<String, dynamic>> postJsonWithHeaders(
+    String path,
+    Map<String, dynamic> body,
+    Map<String, String> headers,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl$path'),
+      headers: {..._headers(), ...headers},
+      body: jsonEncode(body),
+    );
+    return _handleResponse(response);
+  }
+
   Future<List<dynamic>> getList(String path) async {
     final response = await http.get(Uri.parse('$baseUrl$path'), headers: _headers());
     if (response.statusCode >= 200 && response.statusCode < 300) {

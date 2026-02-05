@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../app_session.dart';
 import '../widgets/app_scaffold.dart';
 import '../widgets/fortune_card.dart';
-import 'reading_screen.dart';
 import 'warning_screen.dart';
 import 'product_screen.dart';
+import 'draw_screen.dart';
 
 class FortuneScreen extends StatefulWidget {
   const FortuneScreen({super.key});
@@ -34,9 +34,10 @@ class _FortuneScreenState extends State<FortuneScreen> {
     try {
       final types = await AppSession.instance.api.getList('/master/fortune-types');
       final products = await AppSession.instance.api.getList('/master/products');
+      final filtered = products.where((p) => p['platform'] == null || p['platform'] == 'android').toList();
       setState(() {
         _fortuneTypes = types;
-        _products = products;
+        _products = filtered;
       });
     } catch (e) {
       setState(() => _error = e.toString());
@@ -45,25 +46,16 @@ class _FortuneScreenState extends State<FortuneScreen> {
     }
   }
 
-  Future<void> _executeLife() async {
-    try {
-      final response = await AppSession.instance.api.postJson('/readings/execute', {
-        'fortune_type_key': 'no_desc_draw',
-      });
-      final readingId = response['reading_id'] as String;
-      final result = response['result_json'];
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ReadingScreen(readingId: readingId, resultJson: result),
+  void _openDraw(String fortuneTypeKey, String title) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DrawScreen(
+          fortuneTypeKey: fortuneTypeKey,
+          title: title,
+          showAiInterpretation: false,
         ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ライフ不足またはエラー: $e')),
-      );
-    }
+      ),
+    );
   }
 
   @override
@@ -71,7 +63,7 @@ class _FortuneScreenState extends State<FortuneScreen> {
     final products = _products;
     return AppScaffold(
       title: 'Fortune',
-      subtitle: '説明なし引きと買い切り占いの入口。',
+      subtitle: '一日の運勢や有料鑑定を選べます。',
       actions: [
         IconButton(icon: const Icon(Icons.refresh), onPressed: _loadMaster),
       ],
@@ -79,13 +71,13 @@ class _FortuneScreenState extends State<FortuneScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FortuneCard(
-            title: '説明なしカード引き',
-            subtitle: 'ライフ消費で2枚引き。',
+            title: '今日のワンオラクル',
+            subtitle: 'ライフカードを2枚引きます。',
             badge: 'LIFE',
-            onTap: _executeLife,
+            onTap: () => _openDraw('no_desc_draw', '今日のワンオラクル'),
           ),
           const SizedBox(height: 8),
-          Text('買い切り占い', style: Theme.of(context).textTheme.titleMedium),
+          Text('有料鑑定', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           if (_loading) const Center(child: CircularProgressIndicator()),
           if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),

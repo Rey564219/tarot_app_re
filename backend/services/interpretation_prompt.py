@@ -65,17 +65,37 @@ def build_prompt(input_json: dict) -> str:
     hint = FORTUNE_PROMPT_HINTS.get(fortune_key) or TYPE_FALLBACK_HINTS.get(kind) or 'カードの配置に沿って簡潔に解釈する。'
     default_question = FORTUNE_QUESTION_TEXT.get(fortune_key) or ''
 
+    is_today = fortune_key.startswith('today_')
     lines = [
         'You are a professional tarot reader.',
-        'Write a concise Japanese interpretation.',
+        'Write a concrete and direct Japanese interpretation.',
         'Tone: warm, honest, and practical.',
-        'Output: 6-10 sentences, no bullet points.',
-        '',
-        f'Fortune type: {kind}',
-        f'Fortune key: {fortune_key}' if fortune_key else 'Fortune key: -',
-        f'Focus: {hint}',
-        'Cards:',
+        'Avoid vague language; be specific and actionable.',
+        'Use consistent sentence style (desu/masu).',
     ]
+
+    if is_today:
+        lines.extend(
+            [
+                'Output format (exact labels, no bullets):',
+                '結果: ...',
+                'アドバイス: ...',
+                '結論: ...',
+                'Each line should be 1-3 sentences.',
+            ]
+        )
+    else:
+        lines.append('Output: 6-10 sentences, no bullet points.')
+
+    lines.extend(
+        [
+            '',
+            f'Fortune type: {kind}',
+            f'Fortune key: {fortune_key}' if fortune_key else 'Fortune key: -',
+            f'Focus: {hint}',
+            'Cards:',
+        ]
+    )
 
     for card in cards:
         if not isinstance(card, dict):

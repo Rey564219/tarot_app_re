@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 from psycopg.types.json import Json
 
 from ..db import get_conn
 from ..services.claude import ClaudeClient
+from ..config import DISABLE_INTERPRETATION_LIMITS
 from ..services.card_meanings import get_card_meaning
 from ..services.interpretation_prompt import build_prompt
 from .security import get_user_id
@@ -71,13 +73,40 @@ def generate_interpretation(reading_id: str, user_id: str = Depends(get_user_id)
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                'SELECT ri.input_json FROM reading_interpretations ri JOIN readings r ON r.id = ri.reading_id WHERE ri.reading_id = %s AND r.user_id = %s',
+                'SELECT ri.input_json, r.access_type, ft.key '
+                'FROM reading_interpretations ri '
+                'JOIN readings r ON r.id = ri.reading_id '
+                'JOIN fortune_types ft ON ft.id = r.fortune_type_id '
+                'WHERE ri.reading_id = %s AND r.user_id = %s',
                 (reading_id, user_id),
             )
             row = cur.fetchone()
             if not row:
                 raise HTTPException(status_code=404, detail='Interpretation input not found')
-            input_json = row[0]
+            input_json, access_type, fortune_key = row[0], row[1], row[2]
+
+            if not DISABLE_INTERPRETATION_LIMITS:
+                if access_type == 'one_time':
+                    cur.execute(
+                        'SELECT 1 FROM interpretation_versions WHERE reading_id = %s LIMIT 1',
+                        (reading_id,),
+                    )
+                    if cur.fetchone():
+                        raise HTTPException(status_code=409, detail='Interpretation already generated')
+
+                if fortune_key and fortune_key.startswith('today_'):
+                    window_start = _daily_window_start_utc()
+                    cur.execute(
+                        'SELECT 1 '
+                        'FROM interpretation_versions iv '
+                        'JOIN readings r ON r.id = iv.reading_id '
+                        'JOIN fortune_types ft ON ft.id = r.fortune_type_id '
+                        'WHERE r.user_id = %s AND ft.key = %s AND iv.created_at >= %s '
+                        'LIMIT 1',
+                        (user_id, fortune_key, window_start),
+                    )
+                    if cur.fetchone():
+                        raise HTTPException(status_code=409, detail='Daily interpretation limit reached')
 
     client = ClaudeClient()
     prompt, output_text = client.generate(input_json)
@@ -106,6 +135,18 @@ def generate_interpretation(reading_id: str, user_id: str = Depends(get_user_id)
         'version': next_version,
         'model': client.model,
     }
+
+
+def _daily_window_start_utc() -> datetime:
+    # Daily reset at 05:00 JST
+    now_utc = datetime.now(timezone.utc)
+    now_jst = now_utc + timedelta(hours=9)
+    if now_jst.hour < 5:
+        base_date = (now_jst - timedelta(days=1)).date()
+    else:
+        base_date = now_jst.date()
+    window_start_jst = datetime.combine(base_date, datetime.min.time()) + timedelta(hours=5)
+    return (window_start_jst - timedelta(hours=9)).replace(tzinfo=timezone.utc)
 
 
 @router.get('/{reading_id}')

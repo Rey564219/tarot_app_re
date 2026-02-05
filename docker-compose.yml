@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tarot_db}
+      POSTGRES_USER: ${POSTGRES_USER:-tarot_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin1234}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+      - ./db/migrations/002_interpretation_versions.sql:/docker-entrypoint-initdb.d/002_interpretation_versions.sql:ro
+      - ./db/seeds/001_master_seed.sql:/docker-entrypoint-initdb.d/010_master_seed.sql:ro
+      - ./db/seeds/002_interpretation_seed.sql:/docker-entrypoint-initdb.d/011_interpretation_seed.sql:ro
+      - ./db/seeds/003_card_meanings_seed.sql:/docker-entrypoint-initdb.d/012_card_meanings_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tarot_user} -d ${POSTGRES_DB:-tarot_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://tarot_user:admin1234@db:5432/tarot_db}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret}
+      JWT_ISSUER: ${JWT_ISSUER:-tarot-app}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-tarot-app}
+      JWT_EXP_SECONDS: ${JWT_EXP_SECONDS:-2592000}
+      GOOGLE_SERVICE_ACCOUNT_JSON: ${GOOGLE_SERVICE_ACCOUNT_JSON:-}
+      GOOGLE_PACKAGE_NAME: ${GOOGLE_PACKAGE_NAME:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      AD_REWARD_MAX_PER_HOUR: ${AD_REWARD_MAX_PER_HOUR:-5}
+      AD_REWARD_MAX_PER_DAY: ${AD_REWARD_MAX_PER_DAY:-20}
+      ALLOW_X_USER_ID_FALLBACK: ${ALLOW_X_USER_ID_FALLBACK:-false}
+      ADMIN_USER_IDS: ${ADMIN_USER_IDS:-}
+      ADMIN_LIFE_OVERRIDE: ${ADMIN_LIFE_OVERRIDE:-99}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db_data:

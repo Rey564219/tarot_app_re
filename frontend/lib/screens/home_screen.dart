@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../app_session.dart';
 import '../widgets/app_scaffold.dart';
 import '../widgets/fortune_card.dart';
-import 'bundle_screen.dart';
-import 'reading_screen.dart';
+import 'draw_screen.dart';
+import 'batch_draw_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -43,29 +43,38 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _execute(String fortuneTypeKey) async {
-    setState(() => _loading = true);
-    try {
-      final response = await AppSession.instance.api.postJson('/readings/execute', {
-        'fortune_type_key': fortuneTypeKey,
-      });
-      final readingId = response['reading_id'] as String;
-      final result = response['result_json'];
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ReadingScreen(readingId: readingId, resultJson: result),
+  void _openDraw(String fortuneTypeKey, String title) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DrawScreen(
+          fortuneTypeKey: fortuneTypeKey,
+          title: title,
+          showAiInterpretation: true,
         ),
-      );
-      await _loadStatus();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('実行エラー: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+      ),
+    );
+  }
+
+  void _openDeepBatch() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const BatchDrawScreen(
+          title: '今日の運勢 深掘り（サブスク）',
+          fortuneTypeKeys: [
+            'today_deep_love',
+            'today_deep_work',
+            'today_deep_money',
+            'today_deep_trouble',
+          ],
+          labels: {
+            'today_deep_love': '恋愛',
+            'today_deep_work': '仕事',
+            'today_deep_money': '金運',
+            'today_deep_trouble': 'トラブル',
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _rewardAd() async {
@@ -80,36 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('回復に失敗しました: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _executeBundle() async {
-    setState(() => _loading = true);
-    try {
-      final response = await AppSession.instance.api.postJson('/readings/execute-batch', {
-        'fortune_type_keys': [
-          'week_one',
-          'today_deep_love',
-          'today_deep_work',
-          'today_deep_money',
-          'today_deep_trouble',
-        ],
-      });
-      final items = response['items'] as List<dynamic>;
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => BundleScreen(items: items),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('一括実行エラー: $e')),
+        SnackBar(content: Text('広告でエラー: $e')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -125,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return AppScaffold(
       title: 'Home',
-      subtitle: '無料 → 課金導線の起点。今日の運勢と深掘りを中心に。',
+      subtitle: '今日の運勢とサブスクメニューを選べます。',
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),
@@ -145,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    '今日の運勢',
+                    'ライフ',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
                   ),
                 ),
@@ -162,16 +142,23 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
           const SizedBox(height: 18),
           FortuneCard(
-            title: '今日の運勢 1枚引き',
-            subtitle: '無料で今日のテーマを確認。',
+            title: '無料一枚引き',
+            subtitle: '今日の運勢を1枚でみます。',
             badge: 'FREE',
-            onTap: _loading ? () {} : () => _execute('today_free'),
+            onTap: _loading ? () {} : () => _openDraw('today_free', '無料一枚引き'),
           ),
           FortuneCard(
-            title: '今日の運勢 深掘り',
-            subtitle: '恋愛・仕事・金運・トラブルを追加で深掘り。',
+            title: '今日の運勢 深掘り（サブスク）',
+            subtitle: '恋愛・仕事・金運・トラブルをまとめて表示。',
             badge: subActive ? 'SUB' : 'LOCK',
-            onTap: _loading ? () {} : () => _execute('today_deep_love'),
+            onTap: _loading ? () {} : _openDeepBatch,
+            trailing: const Icon(Icons.lock_outline),
+          ),
+          FortuneCard(
+            title: '一週間の運勢 深掘り（サブスク）',
+            subtitle: '恋愛・仕事・金運・トラブル総合を5枚で読みます。',
+            badge: subActive ? 'SUB' : 'LOCK',
+            onTap: _loading ? () {} : () => _openDraw('week_one', '一週間の運勢 深掘り'),
             trailing: const Icon(Icons.lock_outline),
           ),
           const SizedBox(height: 12),
@@ -181,45 +168,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _loading ? null : _rewardAd,
                   icon: const Icon(Icons.play_circle_outline),
-                  label: const Text('動画広告でライフ回復 +2'),
+                  label: const Text('広告でライフ回復 +2'),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            '深掘りメニュー',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _loading ? null : _executeBundle,
-              icon: const Icon(Icons.auto_awesome),
-              label: const Text('サブスク一括で引く'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _chipButton('恋愛', () => _execute('today_deep_love')),
-              _chipButton('仕事', () => _execute('today_deep_work')),
-              _chipButton('金運', () => _execute('today_deep_money')),
-              _chipButton('トラブル', () => _execute('today_deep_trouble')),
-            ],
-          ),
         ],
       ),
-    );
-  }
-
-  Widget _chipButton(String label, VoidCallback onTap) {
-    return OutlinedButton(
-      onPressed: _loading ? null : onTap,
-      child: Text(label),
     );
   }
 }
