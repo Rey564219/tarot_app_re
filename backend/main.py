@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routes import auth, master, life, readings, warnings, billing, affiliate, consultation, interpretations
+from .routes import auth, master, life, readings, warnings, billing, affiliate, consultation, interpretations, shop
 from .services.claude import ClaudeClient
 
 
@@ -24,6 +24,7 @@ def create_app() -> FastAPI:
     app.include_router(affiliate.router)
     app.include_router(consultation.router)
     app.include_router(interpretations.router)
+    app.include_router(shop.router)
     return app
 
 

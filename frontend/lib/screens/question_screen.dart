@@ -24,6 +24,7 @@ class QuestionScreen extends StatefulWidget {
 class _QuestionScreenState extends State<QuestionScreen> {
   final _questionController = TextEditingController();
   final _contextController = TextEditingController();
+  String _unit = 'month';
 
   @override
   void dispose() {
@@ -40,6 +41,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
           title: widget.title,
           initialQuestion: _questionController.text.trim(),
           initialContext: _contextController.text.trim(),
+          initialUnit: widget.fortuneTypeKey == 'flower_timing' ? _unit : null,
           showAiInterpretation: widget.showAiInterpretation,
           allowManualAi: widget.allowManualAi,
         ),
@@ -66,6 +68,21 @@ class _QuestionScreenState extends State<QuestionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (widget.fortuneTypeKey == 'flower_timing') ...[
+                  Text('単位', style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _unit,
+                    items: const [
+                      DropdownMenuItem(value: 'day', child: Text('1日')),
+                      DropdownMenuItem(value: 'week', child: Text('1週間')),
+                      DropdownMenuItem(value: 'month', child: Text('1か月')),
+                      DropdownMenuItem(value: 'year', child: Text('1年')),
+                    ],
+                    onChanged: (value) => setState(() => _unit = value ?? 'month'),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Text('質問（任意）', style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 8),
                 TextField(

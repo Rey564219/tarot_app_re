@@ -34,8 +34,10 @@ class AppScaffold extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
           children: [
-            Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 16),
+            if (subtitle.trim().isNotEmpty) ...[
+              Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 16),
+            ],
             TweenAnimationBuilder<double>(
               duration: const Duration(milliseconds: 450),
               curve: Curves.easeOutCubic,

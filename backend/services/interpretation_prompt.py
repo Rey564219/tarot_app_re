@@ -62,10 +62,12 @@ def build_prompt(input_json: dict) -> str:
     cards = input_json.get('cards', [])
     question = input_json.get('question') or ''
     context = input_json.get('context') or ''
+    unit = input_json.get('unit')
     hint = FORTUNE_PROMPT_HINTS.get(fortune_key) or TYPE_FALLBACK_HINTS.get(kind) or 'カードの配置に沿って簡潔に解釈する。'
     default_question = FORTUNE_QUESTION_TEXT.get(fortune_key) or ''
 
     is_today = fortune_key.startswith('today_')
+    is_today_deep = fortune_key.startswith('today_deep_') or kind == 'today_deep'
     lines = [
         'You are a professional tarot reader.',
         'Write a concrete and direct Japanese interpretation.',
@@ -74,7 +76,55 @@ def build_prompt(input_json: dict) -> str:
         'Use consistent sentence style (desu/masu).',
     ]
 
-    if is_today:
+    if fortune_key == 'flower_timing':
+        unit_label = {
+            'day': '1日',
+            'week': '1週間',
+            'month': '1か月',
+            'year': '1年',
+        }.get(unit or 'month', '1か月')
+        lines.extend(
+            [
+                'This is a flower timing reading with 12 positions.',
+                f'Time unit: {unit_label}.',
+                'Interpret as N units from now (e.g., 3 months later), not calendar months or specific dates.',
+                'Rule: The Fool indicates the lucky timing. If The Fool does not appear, there is no timing.',
+                'Output format (exact labels, no bullets):',
+                f'ラッキータイミング: 〇{unit_label}後',
+                '理由: ...',
+                '結論: ...',
+                'If no The Fool, set ラッキータイミング to "該当なし" and explain that there is no timing.',
+            ]
+        )
+    elif is_today_deep:
+        lines.extend(
+            [
+                'Output format (exact labels, no bullets):',
+                '# 今日の総合運',
+                '結果: ...',
+                'アドバイス: ...',
+                '結論: ...',
+                '# 今日の恋愛運',
+                '結果: ...',
+                'アドバイス: ...',
+                '結論: ...',
+                '# 今日の仕事運',
+                '結果: ...',
+                'アドバイス: ...',
+                '結論: ...',
+                '# 今日の金運',
+                '結果: ...',
+                'アドバイス: ...',
+                '結論: ...',
+                '# 今日のトラブル運',
+                '結果: ...',
+                'アドバイス: ...',
+                '結論: ...',
+                'Each line should be 1-3 sentences.',
+                'Use the base card for 総合運, and the labeled positions for the other categories.',
+            ]
+        )
+    elif is_today:
         lines.extend(
             [
                 'Output format (exact labels, no bullets):',

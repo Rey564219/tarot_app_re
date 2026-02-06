@@ -4,7 +4,6 @@ import '../app_session.dart';
 import '../widgets/app_scaffold.dart';
 import '../widgets/fortune_card.dart';
 import 'warning_screen.dart';
-import 'product_screen.dart';
 import 'draw_screen.dart';
 
 class FortuneScreen extends StatefulWidget {
@@ -17,7 +16,6 @@ class FortuneScreen extends StatefulWidget {
 class _FortuneScreenState extends State<FortuneScreen> {
   bool _loading = true;
   List<dynamic> _fortuneTypes = [];
-  List<dynamic> _products = [];
   String? _error;
 
   @override
@@ -33,11 +31,8 @@ class _FortuneScreenState extends State<FortuneScreen> {
     });
     try {
       final types = await AppSession.instance.api.getList('/master/fortune-types');
-      final products = await AppSession.instance.api.getList('/master/products');
-      final filtered = products.where((p) => p['platform'] == null || p['platform'] == 'android').toList();
       setState(() {
         _fortuneTypes = types;
-        _products = filtered;
       });
     } catch (e) {
       setState(() => _error = e.toString());
@@ -60,60 +55,41 @@ class _FortuneScreenState extends State<FortuneScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final products = _products;
     return AppScaffold(
       title: 'Fortune',
-      subtitle: '一日の運勢や有料鑑定を選べます。',
+      subtitle: 'DBに登録された全占いを一覧表示します。',
       actions: [
         IconButton(icon: const Icon(Icons.refresh), onPressed: _loadMaster),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FortuneCard(
-            title: '今日のワンオラクル',
-            subtitle: 'ライフカードを2枚引きます。',
-            badge: 'LIFE',
-            onTap: () => _openDraw('no_desc_draw', '今日のワンオラクル'),
-          ),
-          const SizedBox(height: 8),
-          Text('有料鑑定', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
           if (_loading) const Center(child: CircularProgressIndicator()),
           if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
-          ...products.map((product) {
-            final fortuneType = _fortuneTypes.firstWhere(
-              (ft) => ft['id'] == product['fortune_type_id'],
-              orElse: () => null,
-            );
-            final fortuneKey = fortuneType?['key'] ?? 'unknown';
-            final requiresWarning = fortuneType?['requires_warning'] == true;
+          ..._fortuneTypes.map((fortuneType) {
+            final fortuneKey = fortuneType['key']?.toString() ?? '';
+            final requiresWarning = fortuneType['requires_warning'] == true;
+            final accessType = fortuneType['access_type_default']?.toString();
+            final description = fortuneType['description']?.toString();
+            final subtitle = (description != null && description.trim().isNotEmpty)
+                ? description
+                : (accessType == null || accessType.isEmpty ? '占いを実行します。' : accessType);
             return FortuneCard(
-              title: fortuneType?['name'] ?? product['name'],
-              subtitle: '¥${product['price_cents']} ${product['currency']}',
-              badge: requiresWarning ? 'WARNING' : 'ONE-TIME',
+              title: fortuneType['name'] ?? fortuneKey,
+              subtitle: subtitle,
+              badge: requiresWarning ? 'WARNING' : null,
               onTap: () {
                 if (requiresWarning) {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => WarningScreen(
                         fortuneTypeKey: fortuneKey,
-                        onAccepted: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => ProductScreen(productId: product['id']),
-                            ),
-                          );
-                        },
+                        onAccepted: () => _openDraw(fortuneKey, fortuneType['name'] ?? fortuneKey),
                       ),
                     ),
                   );
                 } else {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProductScreen(productId: product['id']),
-                    ),
-                  );
+                  _openDraw(fortuneKey, fortuneType['name'] ?? fortuneKey);
                 }
               },
             );

@@ -89,21 +89,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
             'type': 'celtic_cross',
             'fortune_type_key': fortune_type_key,
             'cards': cards,
-            'slots': _make_slots(
-                cards,
-                [
-                    '現在',
-                    '課題',
-                    '過去',
-                    '未来',
-                    '顕在意識',
-                    '潜在意識',
-                    '自分',
-                    '周囲',
-                    '願望',
-                    '結果',
-                ],
-            ),
+            'slots': _make_slots(cards, ['現状', 'キー', '表層', '過去', '未来', '深層', '総合', '希望と恐れ', '周囲', '立場']),
             'seed': base_seed,
         }
 
@@ -123,27 +109,27 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
             'type': 'triangle_warning',
             'fortune_type_key': fortune_type_key,
             'cards': cards,
-            'slots': _make_slots(cards, ['状況', '関係性', '注意点']),
+            'slots': _make_slots(cards, ['動機', '機会', '自己正当化']),
             'seed': base_seed,
         }
 
     if fortune_type_key == 'no_desc_draw':
-        cards = _draw_cards(base_rng, 2, major_only=False, include_upright=True)
+        cards = _draw_cards(random.SystemRandom(), 2, major_only=False, include_upright=True)
         return {
             'type': 'no_desc_draw',
             'fortune_type_key': fortune_type_key,
             'cards': cards,
-            'slots': _make_slots(cards, ['カード1', 'カード2']),
+            'slots': _make_slots(cards, ['カード', 'カード']),
             'seed': base_seed,
         }
 
     if fortune_type_key == 'compatibility':
-        cards = _draw_cards(base_rng, 3, major_only=False, include_upright=True)
+        cards = _draw_cards(random.SystemRandom(), 3, major_only=False, include_upright=True)
         return {
             'type': 'compatibility',
             'fortune_type_key': fortune_type_key,
             'cards': cards,
-            'slots': _make_slots(cards, ['あなた', '相手', '二人の未来']),
+            'slots': _make_slots(cards, ['相手', '相性', '自分']),
             'seed': base_seed,
             'input': input_json or {},
         }
@@ -195,7 +181,7 @@ def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | Non
             'type': 'partner_sexual',
             'fortune_type_key': fortune_type_key,
             'cards': cards,
-            'slots': _make_slots(cards, ['表面', '深層', '相性']),
+            'slots': _make_slots(cards, ['動機', 'チャンス', '正当化']),
             'seed': base_seed,
         }
 

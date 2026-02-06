@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 from uuid import uuid4
 
@@ -108,6 +109,11 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
                 (str(uuid4()), user_id, 'consume', -1, f'execute:{fortune_type_key}'),
             )
 
+    if fortune_type_key.startswith('today_') or fortune_type_key == 'week_one':
+        existing = _get_today_reading(cur, user_id, fortune_type_id)
+        if existing:
+            return existing
+
     seed = build_seed(user_id, fortune_type_key)
     result_json = generate_reading(user_id, fortune_type_key, input_json)
 
@@ -125,6 +131,32 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
         ),
     )
     return reading_id, result_json
+
+
+def _get_today_reading(cur, user_id: str, fortune_type_id: str):
+    window_start = _daily_window_start_utc()
+    cur.execute(
+        'SELECT id, result_json FROM readings '
+        'WHERE user_id = %s AND fortune_type_id = %s AND created_at >= %s '
+        'ORDER BY created_at DESC LIMIT 1',
+        (user_id, fortune_type_id, window_start),
+    )
+    row = cur.fetchone()
+    if not row:
+        return None
+    return row[0], row[1]
+
+
+def _daily_window_start_utc() -> datetime:
+    # Daily reset at 05:00 JST
+    now_utc = datetime.now(timezone.utc)
+    now_jst = now_utc + timedelta(hours=9)
+    if now_jst.hour < 5:
+        base_date = (now_jst - timedelta(days=1)).date()
+    else:
+        base_date = now_jst.date()
+    window_start_jst = datetime.combine(base_date, datetime.min.time()) + timedelta(hours=5)
+    return (window_start_jst - timedelta(hours=9)).replace(tzinfo=timezone.utc)
 
 
 @router.get('')

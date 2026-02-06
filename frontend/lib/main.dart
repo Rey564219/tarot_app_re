@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_session.dart';
 import 'screens/home_screen.dart';
 import 'screens/fortune_screen.dart';
-import 'screens/compatibility_screen.dart';
 import 'screens/shop_screen.dart';
 import 'screens/mypage_screen.dart';
 import 'screens/warning_screen.dart';
@@ -51,9 +50,8 @@ class _TarotAppState extends State<TarotApp> {
         '/': (_) => const AppBootstrap(),
         '/home': (_) => const MainShell(initialIndex: 0),
         '/fortune': (_) => const MainShell(initialIndex: 1),
-        '/compatibility': (_) => const MainShell(initialIndex: 2),
-        '/shop': (_) => const MainShell(initialIndex: 3),
-        '/mypage': (_) => const MainShell(initialIndex: 4),
+        '/shop': (_) => const MainShell(initialIndex: 2),
+        '/mypage': (_) => const MainShell(initialIndex: 3),
       },
       onGenerateRoute: (settings) {
         final name = settings.name ?? '';
@@ -168,7 +166,6 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
     final screens = const [
       HomeScreen(),
       FortuneScreen(),
-      CompatibilityScreen(),
       ShopScreen(),
       MyPageScreen(),
     ];
@@ -184,7 +181,6 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.auto_awesome_outlined), label: 'Fortune'),
-          NavigationDestination(icon: Icon(Icons.favorite_border), label: 'Compatibility'),
           NavigationDestination(icon: Icon(Icons.storefront_outlined), label: 'Shop'),
           NavigationDestination(icon: Icon(Icons.person_outline), label: 'My Page'),
         ],

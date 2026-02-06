@@ -1,11 +1,20 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../app_session.dart';
 import '../widgets/app_scaffold.dart';
 import 'reading_screen.dart';
 
 class CompatibilityScreen extends StatefulWidget {
-  const CompatibilityScreen({super.key});
+  const CompatibilityScreen({
+    super.key,
+    this.title = '相性占い',
+    this.subtitle = 'お二人の相性を3枚で読みます。',
+    this.category,
+  });
+
+  final String title;
+  final String subtitle;
+  final String? category;
 
   @override
   State<CompatibilityScreen> createState() => _CompatibilityScreenState();
@@ -28,6 +37,7 @@ class _CompatibilityScreenState extends State<CompatibilityScreen> {
           'name': _nameController.text,
           'partner': _partnerController.text,
           'note': _noteController.text,
+          if (widget.category != null) 'category': widget.category,
         },
       });
       final readingId = response['reading_id'] as String;
@@ -41,7 +51,7 @@ class _CompatibilityScreenState extends State<CompatibilityScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('送信エラー: $e')),
+        SnackBar(content: Text('相性占いエラー: $e')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -51,8 +61,8 @@ class _CompatibilityScreenState extends State<CompatibilityScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Compatibility',
-      subtitle: '相性占いフォーム。無料で3枚引き。',
+      title: widget.title,
+      subtitle: widget.subtitle,
       child: Form(
         key: _formKey,
         child: Column(
@@ -60,18 +70,18 @@ class _CompatibilityScreenState extends State<CompatibilityScreen> {
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'あなたの名前'),
-              validator: (value) => value == null || value.isEmpty ? '必須です' : null,
+              validator: (value) => value == null || value.isEmpty ? '入力してください' : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _partnerController,
               decoration: const InputDecoration(labelText: '相手の名前'),
-              validator: (value) => value == null || value.isEmpty ? '必須です' : null,
+              validator: (value) => value == null || value.isEmpty ? '入力してください' : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _noteController,
-              decoration: const InputDecoration(labelText: '相談内容'),
+              decoration: const InputDecoration(labelText: '補足（任意）'),
               maxLines: 3,
             ),
             const SizedBox(height: 16),
@@ -79,7 +89,9 @@ class _CompatibilityScreenState extends State<CompatibilityScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _loading ? null : _submit,
-                child: _loading ? const CircularProgressIndicator() : const Text('相性を占う'),
+                child: _loading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('相性をみる'),
               ),
             ),
           ],

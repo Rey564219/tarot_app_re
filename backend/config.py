@@ -44,3 +44,6 @@ DISABLE_INTERPRETATION_LIMITS = env('DISABLE_INTERPRETATION_LIMITS', 'false').lo
 # Dev-only auth
 ENABLE_DEV_AUTH = env('ENABLE_DEV_AUTH', 'false').lower() == 'true'
 DEV_AUTH_TOKEN = env('DEV_AUTH_TOKEN', '')
+
+# Shop notifications
+DISCORD_WEBHOOK_URL = env('DISCORD_WEBHOOK_URL', '')

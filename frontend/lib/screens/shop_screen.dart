@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../app_session.dart';
 import '../widgets/app_scaffold.dart';
 import '../widgets/fortune_card.dart';
-import 'product_screen.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -13,67 +11,111 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  bool _loading = true;
-  List<dynamic> _fortuneTypes = [];
-  List<dynamic> _products = [];
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProducts();
-  }
-
-  Future<void> _loadProducts() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final types = await AppSession.instance.api.getList('/master/fortune-types');
-      final products = await AppSession.instance.api.getList('/master/products');
-      final filtered = products.where((p) => p['platform'] == null || p['platform'] == 'android').toList();
-      setState(() {
-        _fortuneTypes = types;
-        _products = filtered;
-      });
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
+  final List<_ShopItem> _items = const [
+    _ShopItem(
+      name: '恋愛運：アメジスト、ローズクォーツ',
+      price: '¥7,800',
+      imageLabel: '恋愛運',
+      url: '',
+    ),
+    _ShopItem(
+      name: '仕事運：タイガーアイ、アンバー',
+      price: '¥7,800',
+      imageLabel: '仕事運',
+      url: '',
+    ),
+    _ShopItem(
+      name: '健康運：トルマリン、ブラックルチル、スモーキークォーツ',
+      price: '¥7,800',
+      imageLabel: '健康運',
+      url: '',
+    ),
+    _ShopItem(
+      name: '金運：ヘマタイト、ルチルクォーツ',
+      price: '¥10,800',
+      imageLabel: '金運',
+      url: '',
+    ),
+    _ShopItem(
+      name: 'お守り：ラピスラズリ、クリスタル',
+      price: '¥10,800',
+      imageLabel: 'お守り',
+      url: '',
+    ),
+    _ShopItem(
+      name: '職人との相談で決めるメニュー',
+      price: '¥15,800',
+      imageLabel: '相談',
+      url: '',
+    ),
+    _ShopItem(
+      name: '性癖トランプ',
+      price: '¥3,800',
+      imageLabel: '性癖トランプ',
+      url: '',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Shop',
-      subtitle: '買い切り占い。購入後に結果を実行。',
-      actions: [
-        IconButton(icon: const Icon(Icons.refresh), onPressed: _loadProducts),
-      ],
+      subtitle: '天然石アクセサリーと性癖トランプの販売です。',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_loading) const Center(child: CircularProgressIndicator()),
-          if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
-          ..._products.map((product) {
-            final fortuneType = _fortuneTypes.firstWhere(
-              (ft) => ft['id'] == product['fortune_type_id'],
-              orElse: () => null,
-            );
-            return FortuneCard(
-              title: fortuneType?['name'] ?? product['name'],
-              subtitle: '¥${product['price_cents']} ${product['currency']}',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ProductScreen(productId: product['id']),
-                  ),
-                );
-              },
-            );
-          }).toList(),
+          ..._items.map((item) => _ShopCard(item: item)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShopItem {
+  const _ShopItem({
+    required this.name,
+    required this.price,
+    required this.imageLabel,
+    required this.url,
+  });
+
+  final String name;
+  final String price;
+  final String imageLabel;
+  final String url;
+}
+
+class _ShopCard extends StatelessWidget {
+  const _ShopCard({
+    required this.item,
+  });
+
+  final _ShopItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasUrl = item.url.trim().isNotEmpty;
+    return FortuneCard(
+      title: item.name,
+      subtitle: item.price,
+      onTap: () {},
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          SizedBox(
+            width: 120,
+            child: ElevatedButton(
+              onPressed: hasUrl
+                  ? () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('決済URL: ${item.url}')),
+                      );
+                    }
+                  : null,
+              child: const Text('決済ページへ'),
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );

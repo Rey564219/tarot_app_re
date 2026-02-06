@@ -11,6 +11,7 @@ class DrawScreen extends StatefulWidget {
     required this.title,
     this.initialQuestion,
     this.initialContext,
+    this.initialUnit,
     this.showAiInterpretation = true,
     this.allowManualAi = true,
   });
@@ -19,6 +20,7 @@ class DrawScreen extends StatefulWidget {
   final String title;
   final String? initialQuestion;
   final String? initialContext;
+  final String? initialUnit;
   final bool showAiInterpretation;
   final bool allowManualAi;
 
@@ -65,9 +67,12 @@ class _DrawScreenState extends State<DrawScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final showQuestionCopy = !widget.fortuneTypeKey.startsWith('today_deep_') &&
+        widget.fortuneTypeKey != 'today_free' &&
+        widget.fortuneTypeKey != 'week_one';
     return AppScaffold(
       title: 'カードを引く',
-      subtitle: '深呼吸してから、1回だけカードを引いてください。',
+      subtitle: showQuestionCopy ? '質問事項を入力してから、カードを引いてください。' : '',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -75,8 +80,10 @@ class _DrawScreenState extends State<DrawScreen> {
           const SizedBox(height: 8),
           Text(
             _revealed
-                ? (widget.showAiInterpretation ? 'カードが出ました。結果を読み取っています…' : 'カードが出ました。')
-                : '準備ができたらボタンを押してください。',
+                ? (widget.showAiInterpretation
+                    ? 'カードが出ました。結果を読み取っています...'
+                    : 'カードが出ました。')
+                : (showQuestionCopy ? '質問事項を入力してから、ボタンを押してください。' : 'カードを引いてください。'),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -111,7 +118,7 @@ class _DrawScreenState extends State<DrawScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.style),
-                label: Text(_loading ? 'カードを引いています…' : 'カードを引く'),
+                label: Text(_loading ? 'カードを引いています...' : 'カードを引く'),
               ),
             ),
         ],
@@ -142,7 +149,7 @@ class _DrawScreenState extends State<DrawScreen> {
         children: [
           Text('AI解釈', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text(output.isEmpty ? '解釈を生成中です…' : output),
+          Text(output.isEmpty ? '解釈を生成中です...' : output),
         ],
       ),
     );
@@ -213,10 +220,15 @@ class _DrawScreenState extends State<DrawScreen> {
   Map<String, dynamic> _buildInterpretationInput(Map result) {
     final slots = result['slots'] as List<dynamic>? ?? [];
     final fortuneTypeKey = result['fortune_type_key'];
-    final cards = slots.map((slot) {
+    final type = result['type']?.toString() ?? '';
+    final cards = <Map<String, dynamic>>[];
+
+    for (var i = 0; i < slots.length; i++) {
+      final slot = slots[i];
+      if (slot is! Map) continue;
       final card = slot['card'] ?? {};
-      return {
-        'position': slot['position'],
+      cards.add({
+        'position': _mapPositionLabel(type, i, slot['position']?.toString() ?? ''),
         'card_name': card['name'],
         'arcana': card['arcana'],
         'suit': card['suit'],
@@ -224,13 +236,13 @@ class _DrawScreenState extends State<DrawScreen> {
         'upright': card['upright'],
         'meaning_short': null,
         'keywords': [],
-      };
-    }).toList();
+      });
+    }
 
     final baseCard = result['base_card'];
     if (baseCard != null) {
       cards.insert(0, {
-        'position': 'base',
+        'position': type == 'today_deep' ? '総合' : 'base',
         'card_name': baseCard['name'],
         'arcana': baseCard['arcana'],
         'suit': baseCard['suit'],
@@ -262,8 +274,32 @@ class _DrawScreenState extends State<DrawScreen> {
       'fortune_type_key': fortuneTypeKey,
       'question': widget.initialQuestion?.trim() ?? '',
       'context': widget.initialContext?.trim() ?? '',
+      if (widget.initialUnit != null) 'unit': widget.initialUnit,
       'cards': cards,
     };
   }
 
+  String _mapPositionLabel(String type, int index, String fallback) {
+    if (type == 'hexagram') {
+      const labels = ['過去', '立場', '現在', '未来', 'アドバイス', '周囲', '結果'];
+      if (index >= 0 && index < labels.length) return labels[index];
+    }
+    if (type == 'celtic_cross') {
+      const labels = ['現状', 'キー', '表層', '過去', '未来', '深層', '総合', '希望と恐れ', '周囲', '立場'];
+      if (index >= 0 && index < labels.length) return labels[index];
+    }
+    if (type == 'triangle_warning') {
+      const labels = ['動機', '機会', '自己正当化'];
+      if (index >= 0 && index < labels.length) return labels[index];
+    }
+    if (type == 'compatibility') {
+      const labels = ['相手', '相性', '自分'];
+      if (index >= 0 && index < labels.length) return labels[index];
+    }
+    if (type == 'today_deep') {
+      const labels = ['恋愛', '仕事', '金運', 'トラブル'];
+      if (index >= 0 && index < labels.length) return labels[index];
+    }
+    return fallback;
+  }
 }

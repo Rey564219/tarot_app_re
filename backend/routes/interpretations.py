@@ -86,27 +86,13 @@ def generate_interpretation(reading_id: str, user_id: str = Depends(get_user_id)
             input_json, access_type, fortune_key = row[0], row[1], row[2]
 
             if not DISABLE_INTERPRETATION_LIMITS:
-                if access_type == 'one_time':
-                    cur.execute(
-                        'SELECT 1 FROM interpretation_versions WHERE reading_id = %s LIMIT 1',
-                        (reading_id,),
-                    )
-                    if cur.fetchone():
-                        raise HTTPException(status_code=409, detail='Interpretation already generated')
-
                 if fortune_key and fortune_key.startswith('today_'):
                     window_start = _daily_window_start_utc()
-                    cur.execute(
-                        'SELECT 1 '
-                        'FROM interpretation_versions iv '
-                        'JOIN readings r ON r.id = iv.reading_id '
-                        'JOIN fortune_types ft ON ft.id = r.fortune_type_id '
-                        'WHERE r.user_id = %s AND ft.key = %s AND iv.created_at >= %s '
-                        'LIMIT 1',
-                        (user_id, fortune_key, window_start),
+                    existing_today = _get_latest_interpretation_for_today(
+                        cur, user_id, fortune_key, window_start
                     )
-                    if cur.fetchone():
-                        raise HTTPException(status_code=409, detail='Daily interpretation limit reached')
+                    if existing_today:
+                        return existing_today
 
     client = ClaudeClient()
     prompt, output_text = client.generate(input_json)
@@ -147,6 +133,48 @@ def _daily_window_start_utc() -> datetime:
         base_date = now_jst.date()
     window_start_jst = datetime.combine(base_date, datetime.min.time()) + timedelta(hours=5)
     return (window_start_jst - timedelta(hours=9)).replace(tzinfo=timezone.utc)
+
+
+def _get_latest_interpretation(cur, reading_id: str) -> dict | None:
+    cur.execute(
+        'SELECT output_text, updated_at FROM reading_interpretations WHERE reading_id = %s',
+        (reading_id,),
+    )
+    row = cur.fetchone()
+    if not row or not row[0]:
+        return None
+    cur.execute(
+        'SELECT version, model FROM interpretation_versions WHERE reading_id = %s ORDER BY version DESC LIMIT 1',
+        (reading_id,),
+    )
+    vrow = cur.fetchone()
+    version = vrow[0] if vrow else 0
+    model = vrow[1] if vrow else None
+    return {
+        'reading_id': reading_id,
+        'prompt': None,
+        'output_text': row[0],
+        'version': version,
+        'model': model,
+    }
+
+
+def _get_latest_interpretation_for_today(
+    cur, user_id: str, fortune_key: str, window_start: datetime
+) -> dict | None:
+    cur.execute(
+        'SELECT r.id '
+        'FROM readings r '
+        'JOIN fortune_types ft ON ft.id = r.fortune_type_id '
+        'JOIN reading_interpretations ri ON ri.reading_id = r.id '
+        'WHERE r.user_id = %s AND ft.key = %s AND ri.updated_at >= %s '
+        'ORDER BY ri.updated_at DESC LIMIT 1',
+        (user_id, fortune_key, window_start),
+    )
+    row = cur.fetchone()
+    if not row:
+        return None
+    return _get_latest_interpretation(cur, row[0])
 
 
 @router.get('/{reading_id}')

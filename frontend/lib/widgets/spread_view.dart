@@ -23,18 +23,21 @@ class SpreadView extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final layout = _layoutForType(resultJson);
-        if (layout == _SpreadLayout.hexagram) {
-          return _hexagramLayout(context, cards, constraints.maxWidth);
-        }
-        if (layout == _SpreadLayout.celticCross) {
-          return _celticCrossLayout(context, cards, constraints.maxWidth);
-        }
-        if (layout == _SpreadLayout.triangle) {
-          return _triangleLayout(context, cards, constraints.maxWidth);
-        }
-        if (layout == _SpreadLayout.flower) {
-          return _flowerLayout(context, cards, constraints.maxWidth);
-        }
+    if (layout == _SpreadLayout.hexagram) {
+      return _hexagramLayout(context, cards, constraints.maxWidth);
+    }
+    if (layout == _SpreadLayout.celticCross) {
+      return _celticCrossLayout(context, cards, constraints.maxWidth);
+    }
+    if (layout == _SpreadLayout.triangle) {
+      return _triangleLayout(context, cards, constraints.maxWidth);
+    }
+    if (layout == _SpreadLayout.flower) {
+      return _flowerLayout(context, cards, constraints.maxWidth);
+    }
+    if (layout == _SpreadLayout.compatibility) {
+      return _compatibilityLayout(context, cards, constraints.maxWidth);
+    }
         if (layout == _SpreadLayout.todayDeep) {
           return _todayDeepLayout(context, cards, constraints.maxWidth);
         }
@@ -45,24 +48,26 @@ class SpreadView extends StatelessWidget {
 
   List<Map<String, dynamic>> _collectCards(dynamic resultJson) {
     if (resultJson is! Map) return [];
+    final type = resultJson['type']?.toString() ?? '';
     final cards = <Map<String, dynamic>>[];
 
     final baseCard = resultJson['base_card'];
     if (baseCard is Map) {
       cards.add({
         ...baseCard,
-        'position': 'base',
+        'position': type == 'today_deep' ? '総合' : 'base',
       });
     }
 
     final slots = resultJson['slots'] as List<dynamic>? ?? [];
-    for (final slot in slots) {
+    for (var i = 0; i < slots.length; i++) {
+      final slot = slots[i];
       if (slot is Map) {
         final card = slot['card'];
         if (card is Map) {
           cards.add({
             ...card,
-            'position': slot['position'],
+            'position': _mapPositionLabel(type, i, slot['position']?.toString() ?? ''),
           });
         }
       }
@@ -81,6 +86,26 @@ class SpreadView extends StatelessWidget {
     return cards;
   }
 
+  String _mapPositionLabel(String type, int index, String fallback) {
+    if (type == 'hexagram') {
+      const labels = ['過去', '立場', '現在', '未来', 'アドバイス', '周囲', '結果'];
+      if (index >= 0 && index < labels.length) return labels[index];
+    }
+    if (type == 'celtic_cross') {
+      const labels = ['現状', 'キー', '表層', '過去', '未来', '深層', '総合', '希望と恐れ', '周囲', '立場'];
+      if (index >= 0 && index < labels.length) return labels[index];
+    }
+    if (type == 'triangle_warning') {
+      const labels = ['動機', '機会', '自己正当化'];
+      if (index >= 0 && index < labels.length) return labels[index];
+    }
+    if (type == 'compatibility') {
+      const labels = ['相手', '相性', '自分'];
+      if (index >= 0 && index < labels.length) return labels[index];
+    }
+    return fallback;
+  }
+
   _SpreadLayout _layoutForType(dynamic resultJson) {
     if (resultJson is! Map) return _SpreadLayout.grid;
     final type = resultJson['type']?.toString() ?? '';
@@ -88,13 +113,19 @@ class SpreadView extends StatelessWidget {
     if (type == 'celtic_cross') return _SpreadLayout.celticCross;
     if (type == 'triangle_warning') return _SpreadLayout.triangle;
     if (type == 'flower_timing') return _SpreadLayout.flower;
-    if (type == 'today_deep') return _SpreadLayout.todayDeep;
+    if (type == 'compatibility') return _SpreadLayout.compatibility;
+    if (type == 'today_deep') return _SpreadLayout.grid;
     return _SpreadLayout.grid;
   }
 
   Widget _cardTile(BuildContext context, Map<String, dynamic> card, double width) {
     final name = card['name']?.toString() ?? '';
     final position = card['position']?.toString() ?? '';
+    final upright = card['upright'];
+    final showOrientation = _layoutForType(resultJson) != _SpreadLayout.flower;
+    final orientationText = upright == null
+        ? null
+        : (upright == true ? '正位置' : '逆位置');
     return SizedBox(
       width: width,
       child: Column(
@@ -123,6 +154,8 @@ class SpreadView extends StatelessWidget {
           const SizedBox(height: 6),
           if (showCardName && name.isNotEmpty)
             Text(name, style: Theme.of(context).textTheme.bodySmall),
+          if (showOrientation && orientationText != null)
+            Text(orientationText, style: Theme.of(context).textTheme.bodySmall),
           if (showPosition && position.isNotEmpty)
             Text(position, style: Theme.of(context).textTheme.bodySmall),
         ],
@@ -131,29 +164,37 @@ class SpreadView extends StatelessWidget {
   }
 
   Widget _simpleGrid(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
-    final cardWidth = (maxWidth - 24) / 2;
+    final cardWidth = maxWidth * 0.10;
     return Wrap(
-      spacing: 12,
-      runSpacing: 12,
+      spacing: 10,
+      runSpacing: 10,
       children: cards.map((card) => _cardTile(context, card, cardWidth)).toList(),
     );
   }
 
   Widget _hexagramLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
-    final size = maxWidth.clamp(260, 520).toDouble();
-    final cardW = size / 4.4;
+    final size = maxWidth;
+    final cardW = maxWidth * 0.10;
     final cardH = cardW / 0.6;
-    final center = size / 2;
-    final radius = size / 2.5;
-    final angleStep = 60 * (3.1415926535 / 180);
-    final positions = List.generate(6, (i) {
-      final angle = -90 * (3.1415926535 / 180) + (angleStep * i);
-      return Offset(center + radius * math.cos(angle), center + radius * math.sin(angle));
-    });
-    final last = cards.length > 6 ? cards[6] : null;
+    final center = Offset(size * 0.5, size * 0.42);
+    final top = Offset(size * 0.5, size * 0.16);
+    final bottom = Offset(size * 0.5, size * 0.72);
+    final left = Offset(size * 0.18, size * 0.42);
+    final right = Offset(size * 0.82, size * 0.42);
+    final bottomLeft = Offset(size * 0.18, size * 0.70);
+    final bottomRight = Offset(size * 0.82, size * 0.70);
+    final positions = <Offset>[
+      top, // 過去
+      right, // 立場
+      bottomRight, // 現在
+      bottomLeft, // 未来
+      bottom, // アドバイス
+      left, // 周囲
+      center, // 結果
+    ];
     return SizedBox(
       width: size,
-      height: size + cardH * 0.3,
+      height: size * 0.9,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -164,25 +205,18 @@ class SpreadView extends StatelessWidget {
               width: cardW,
               child: _cardTile(context, cards[i], cardW),
             ),
-          if (last != null)
-            Positioned(
-              left: center - cardW / 2,
-              top: center - cardH / 2,
-              width: cardW,
-              child: _cardTile(context, last, cardW),
-            ),
         ],
       ),
     );
   }
 
   Widget _celticCrossLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
-    final size = maxWidth.clamp(280, 560).toDouble();
-    final cardW = size / 4.3;
+    final size = maxWidth;
+    final cardW = maxWidth * 0.10;
     final cardH = cardW / 0.6;
-    final centerX = size * 0.38;
+    final centerX = size * 0.34;
     final centerY = size * 0.42;
-    final gap = cardW * 0.25;
+    final gap = cardW * 0.30;
 
     final center = Offset(centerX - cardW / 2, centerY - cardH / 2);
     final above = Offset(centerX - cardW / 2, centerY - cardH - gap);
@@ -190,12 +224,12 @@ class SpreadView extends StatelessWidget {
     final left = Offset(centerX - cardW - gap, centerY - cardH / 2);
     final right = Offset(centerX + cardW + gap, centerY - cardH / 2);
     final columnX = size * 0.72;
-    final colTop = size * 0.1;
-    final colGap = cardH * 0.18;
+    final colTop = size * 0.08;
+    final colGap = cardH * 0.12;
 
     return SizedBox(
       width: size,
-      height: size,
+      height: size * 0.9,
       child: Stack(
         children: [
           if (cards.isNotEmpty)
@@ -247,16 +281,16 @@ class SpreadView extends StatelessWidget {
   }
 
   Widget _triangleLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
-    final size = maxWidth.clamp(260, 520).toDouble();
-    final cardW = size / 3.4;
+    final size = maxWidth;
+    final cardW = maxWidth * 0.10;
     final cardH = cardW / 0.6;
     final top = Offset(size / 2 - cardW / 2, 0);
-    final left = Offset(0, cardH + 20);
-    final right = Offset(size - cardW, cardH + 20);
+    final left = Offset(size * 0.2 - cardW / 2, cardH * 1.2);
+    final right = Offset(size * 0.8 - cardW / 2, cardH * 1.2);
     final positions = [top, left, right];
     return SizedBox(
       width: size,
-      height: cardH * 2.2,
+      height: cardH * 2.4,
       child: Stack(
         children: [
           for (var i = 0; i < cards.length && i < positions.length; i++)
@@ -272,11 +306,11 @@ class SpreadView extends StatelessWidget {
   }
 
   Widget _flowerLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
-    final size = maxWidth.clamp(300, 600).toDouble();
-    final cardW = size / 5.5;
+    final size = maxWidth;
+    final cardW = maxWidth * 0.10;
     final cardH = cardW / 0.6;
     final center = size / 2;
-    final radius = size / 2.6;
+    final radius = size * 0.36;
     final angleStep = 30 * (3.1415926535 / 180);
     return SizedBox(
       width: size,
@@ -284,12 +318,22 @@ class SpreadView extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          for (var i = 0; i < cards.length && i < 12; i++)
+          for (final card in _flowerOrdered(cards))
             Positioned(
-              left: center + radius * math.cos(-90 * (3.1415926535 / 180) + angleStep * i) - cardW / 2,
-              top: center + radius * math.sin(-90 * (3.1415926535 / 180) + angleStep * i) - cardH / 2,
+              left: center +
+                  radius *
+                      math.cos(
+                        -90 * (3.1415926535 / 180) + angleStep * ((card['pos_index'] as int) % 12),
+                      ) -
+                  cardW / 2,
+              top: center +
+                  radius *
+                      math.sin(
+                        -90 * (3.1415926535 / 180) + angleStep * ((card['pos_index'] as int) % 12),
+                      ) -
+                  cardH / 2,
               width: cardW,
-              child: _cardTile(context, cards[i], cardW),
+              child: _cardTile(context, card['card'] as Map<String, dynamic>, cardW),
             ),
         ],
       ),
@@ -297,8 +341,8 @@ class SpreadView extends StatelessWidget {
   }
 
   Widget _todayDeepLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
-    final size = maxWidth.clamp(260, 520).toDouble();
-    final cardW = size / 3.8;
+    final size = maxWidth;
+    final cardW = maxWidth * 0.10;
     final cardH = cardW / 0.6;
     final center = Offset(size / 2 - cardW / 2, cardH * 0.6);
     final positions = [
@@ -310,7 +354,7 @@ class SpreadView extends StatelessWidget {
     ];
     return SizedBox(
       width: size,
-      height: cardH * 4.2,
+      height: cardH * 3.6,
       child: Stack(
         children: [
           for (var i = 0; i < cards.length && i < positions.length; i++)
@@ -323,6 +367,30 @@ class SpreadView extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _compatibilityLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
+    final cardW = maxWidth * 0.10;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        for (var i = 0; i < cards.length && i < 3; i++)
+          _cardTile(context, cards[i], cardW),
+      ],
+    );
+  }
+
+  List<Map<String, dynamic>> _flowerOrdered(List<Map<String, dynamic>> cards) {
+    final ordered = <Map<String, dynamic>>[];
+    for (final card in cards) {
+      final pos = card['position']?.toString() ?? '';
+      final idx = int.tryParse(pos);
+      if (idx == null) continue;
+      final posIndex = idx % 12; // 12 -> 0 (top)
+      ordered.add({'pos_index': posIndex, 'card': card});
+    }
+    ordered.sort((a, b) => (a['pos_index'] as int).compareTo(b['pos_index'] as int));
+    return ordered;
   }
 
   String _cardAssetPath(Map<String, dynamic> card) {
@@ -342,5 +410,6 @@ enum _SpreadLayout {
   celticCross,
   triangle,
   flower,
+  compatibility,
   todayDeep,
 }

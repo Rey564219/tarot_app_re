@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../app_session.dart';
+import 'product_screen.dart';
 
 class WarningScreen extends StatefulWidget {
   const WarningScreen({super.key, required this.fortuneTypeKey, this.onAccepted});
@@ -21,16 +22,53 @@ class _WarningScreenState extends State<WarningScreen> {
       await AppSession.instance.api.postJson('/warnings/accept', {
         'fortune_type_key': widget.fortuneTypeKey,
       });
-      widget.onAccepted?.call();
-      if (!mounted) return;
-      Navigator.of(context).pop();
+      if (widget.onAccepted != null) {
+        widget.onAccepted?.call();
+        if (!mounted) return;
+        Navigator.of(context).pop();
+      } else {
+        await _navigateToProduct();
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('警告の承諾に失敗: $e')),
+        SnackBar(content: Text('警告の承認に失敗しました: $e')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _navigateToProduct() async {
+    try {
+      final types = await AppSession.instance.api.getList('/master/fortune-types');
+      final products = await AppSession.instance.api.getList('/master/products');
+      final fortuneType = types.firstWhere(
+        (ft) => ft['key'] == widget.fortuneTypeKey,
+        orElse: () => null,
+      );
+      if (fortuneType == null) {
+        throw Exception('Fortune type not found');
+      }
+      final product = products.firstWhere(
+        (p) => p['fortune_type_id'] == fortuneType['id'],
+        orElse: () => null,
+      );
+      if (product == null) {
+        throw Exception('Product not found');
+      }
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ProductScreen(productId: product['id']),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('次の画面に進めませんでした: $e')),
+      );
+      Navigator.of(context).pop();
     }
   }
 
@@ -49,8 +87,7 @@ class _WarningScreenState extends State<WarningScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'この占いは毎回警告が表示されます。'
-              '実行を続ける場合は注意事項に同意してください。',
+              'この占いは毎回警告が表示されます。実行を続ける場合は注意事項に同意してください。',
             ),
             const SizedBox(height: 24),
             Row(

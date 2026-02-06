@@ -1,3 +1,8 @@
+URLが決まったら、shop_screen.dart の url: '' を差し替える
+.env に Discord の Webhook URL を追加してください。
+DISCORD_WEBHOOK_URL=あなたのWebhookURL
+
+
 画像置き場所: frontend/assets/cards/
 ファイル名はカード名のスラッグ（英字小文字 + _）
 例:
@@ -44,5 +49,60 @@ VALUES (
   true
 );
 
-
+frontend
 flutter run -d chrome --dart-define=DEV_USER_ID=e154d397-dff7-4780-b5c4-5aa3a3889a7d --dart-define=DEV_AUTH_TOKEN=test
+
+backend
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port
+ 8000
+
+
+データクリア
+BEGIN;
+
+WITH win AS (
+  SELECT
+    CASE
+      WHEN (now() AT TIME ZONE 'Asia/Tokyo')::time < time '05:00'
+      THEN (date_trunc('day', (now() AT TIME ZONE 'Asia/Tokyo') - interval '1 day')
+            + interval '5 hours') AT TIME ZONE 'Asia/Tokyo'
+      ELSE (date_trunc('day', (now() AT TIME ZONE 'Asia/Tokyo'))
+            + interval '5 hours') AT TIME ZONE 'Asia/Tokyo'
+    END AS window_start_fixed
+)
+DELETE FROM interpretation_versions
+WHERE reading_id IN (
+  SELECT r.id
+  FROM readings r
+  JOIN fortune_types ft ON ft.id = r.fortune_type_id
+  JOIN reading_interpretations ri ON ri.reading_id = r.id
+  CROSS JOIN win w
+  WHERE r.user_id = 'e154d397-dff7-4780-b5c4-5aa3a3889a7d'
+    AND ft.key LIKE 'today_%'
+    AND ri.updated_at >= w.window_start_fixed
+);
+
+WITH win AS (
+  SELECT
+    CASE
+      WHEN (now() AT TIME ZONE 'Asia/Tokyo')::time < time '05:00'
+      THEN (date_trunc('day', (now() AT TIME ZONE 'Asia/Tokyo') - interval '1 day')
+            + interval '5 hours') AT TIME ZONE 'Asia/Tokyo'
+      ELSE (date_trunc('day', (now() AT TIME ZONE 'Asia/Tokyo'))
+            + interval '5 hours') AT TIME ZONE 'Asia/Tokyo'
+    END AS window_start_fixed
+)
+UPDATE reading_interpretations
+SET output_text = NULL, updated_at = now()
+WHERE reading_id IN (
+  SELECT r.id
+  FROM readings r
+  JOIN fortune_types ft ON ft.id = r.fortune_type_id
+  JOIN reading_interpretations ri ON ri.reading_id = r.id
+  CROSS JOIN win w
+  WHERE r.user_id = 'e154d397-dff7-4780-b5c4-5aa3a3889a7d'
+    AND ft.key LIKE 'today_%'
+    AND ri.updated_at >= w.window_start_fixed
+);
+
+COMMIT;
