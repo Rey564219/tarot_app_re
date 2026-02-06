@@ -8,6 +8,7 @@ class FortuneCard extends StatelessWidget {
     required this.onTap,
     this.trailing,
     this.badge,
+    this.genre,
   });
 
   final String title;
@@ -15,6 +16,7 @@ class FortuneCard extends StatelessWidget {
   final VoidCallback onTap;
   final Widget? trailing;
   final String? badge;
+  final String? genre;
 
   @override
   Widget build(BuildContext context) {
@@ -56,29 +58,34 @@ class FortuneCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(title, style: Theme.of(context).textTheme.titleMedium),
                       ),
-                      if (badge != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0E1F2E),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            badge!,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: Colors.white),
-                          ),
-                        ),
+                      const SizedBox(width: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          if (genre != null && genre!.trim().isNotEmpty)
+                            _TagLabel(
+                              label: genre!,
+                              background: const Color(0xFF0B3D91),
+                            ),
+                          if (badge != null)
+                            _TagLabel(
+                              label: badge!,
+                              background: const Color(0xFF0E1F2E),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                  if (subtitle.trim().isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                  ],
                 ],
               ),
             ),
@@ -88,6 +95,31 @@ class FortuneCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TagLabel extends StatelessWidget {
+  const _TagLabel({required this.label, required this.background});
+
+  final String label;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context)
+            .textTheme
+            .bodySmall
+            ?.copyWith(color: Colors.white, letterSpacing: 0.3),
       ),
     );
   }

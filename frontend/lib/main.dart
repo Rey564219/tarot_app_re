@@ -6,6 +6,7 @@ import 'screens/home_screen.dart';
 import 'screens/fortune_screen.dart';
 import 'screens/shop_screen.dart';
 import 'screens/mypage_screen.dart';
+import 'screens/history_screen.dart';
 import 'screens/warning_screen.dart';
 import 'screens/reading_screen.dart';
 import 'screens/product_screen.dart';
@@ -52,6 +53,7 @@ class _TarotAppState extends State<TarotApp> {
         '/fortune': (_) => const MainShell(initialIndex: 1),
         '/shop': (_) => const MainShell(initialIndex: 2),
         '/mypage': (_) => const MainShell(initialIndex: 3),
+        '/history': (_) => const MainShell(initialIndex: 4),
       },
       onGenerateRoute: (settings) {
         final name = settings.name ?? '';
@@ -168,6 +170,7 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
       FortuneScreen(),
       ShopScreen(),
       MyPageScreen(),
+      HistoryScreen(),
     ];
 
     return Scaffold(
@@ -183,6 +186,7 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
           NavigationDestination(icon: Icon(Icons.auto_awesome_outlined), label: 'Fortune'),
           NavigationDestination(icon: Icon(Icons.storefront_outlined), label: 'Shop'),
           NavigationDestination(icon: Icon(Icons.person_outline), label: 'My Page'),
+          NavigationDestination(icon: Icon(Icons.history), label: 'History'),
         ],
       ),
     );

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../app_session.dart';
 import '../widgets/app_scaffold.dart';
-import 'reading_screen.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -14,7 +13,6 @@ class MyPageScreen extends StatefulWidget {
 class _MyPageScreenState extends State<MyPageScreen> {
   bool _loading = true;
   Map<String, dynamic>? _billing;
-  List<dynamic> _readings = [];
   List<dynamic> _affiliateLinks = [];
   String? _error;
 
@@ -35,11 +33,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
     });
     try {
       final billing = await AppSession.instance.api.getJson('/billing/status');
-      final readings = await AppSession.instance.api.getJson('/readings?limit=20');
       final affiliates = await AppSession.instance.api.getList('/master/affiliate-links');
       setState(() {
         _billing = billing;
-        _readings = readings['items'] as List<dynamic>;
         _affiliateLinks = affiliates;
       });
     } catch (e) {
@@ -57,59 +53,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
         'message': _messageController.text,
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('送信しました')));
-      _contactController.clear();
-      _messageController.clear();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('送信失敗: $e')));
-    }
-  }
-
-  Future<void> _trackAffiliate(String id) async {
-    try {
-      await AppSession.instance.api.postJson('/affiliate/click', {
-        'affiliate_link_id': id,
-        'placement': 'mypage',
-      });
-    } catch (_) {}
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final subActive = _billing?['subscription_active'] == true;
-    return AppScaffold(
-      title: 'My Page',
-      subtitle: '購読状態と履歴、アフィリエイト、個人鑑定。',
-      actions: [
-        IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
-      ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_loading) const Center(child: CircularProgressIndicator()),
-          if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
-          if (AppSession.instance.userId != null)
-            _statusCard('User ID', AppSession.instance.userId!),
-          _statusCard('サブスク状態', subActive ? '有効' : '未加入'),
-          _statusCard('広告非表示', _billing?['ads_disabled'] == true ? 'ON' : 'OFF'),
-          const SizedBox(height: 16),
-          Text('鑑定履歴', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          ..._readings.map((reading) {
-            return ListTile(
-              title: Text('Reading ${reading['id']}'),
-              subtitle: Text(reading['created_at'].toString()),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ReadingScreen(readingId: reading['id']),
-                  ),
-                );
-              },
-            );
-          }).toList(),
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:
           const SizedBox(height: 16),
           Text('アフィリエイト', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),

@@ -57,7 +57,7 @@ class _FortuneScreenState extends State<FortuneScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Fortune',
-      subtitle: 'DBに登録された全占いを一覧表示します。',
+      subtitle: '',
       actions: [
         IconButton(icon: const Icon(Icons.refresh), onPressed: _loadMaster),
       ],
@@ -70,13 +70,15 @@ class _FortuneScreenState extends State<FortuneScreen> {
             final fortuneKey = fortuneType['key']?.toString() ?? '';
             final requiresWarning = fortuneType['requires_warning'] == true;
             final accessType = fortuneType['access_type_default']?.toString();
-            final description = fortuneType['description']?.toString();
-            final subtitle = (description != null && description.trim().isNotEmpty)
+            final description = fortuneType['description']?.toString().trim();
+            final subtitle = (description != null && description.isNotEmpty)
                 ? description
-                : (accessType == null || accessType.isEmpty ? '占いを実行します。' : accessType);
+                : '占いを実行します。';
+            final genre = (accessType?.toString() ?? '').trim().toUpperCase();
             return FortuneCard(
               title: fortuneType['name'] ?? fortuneKey,
               subtitle: subtitle,
+              genre: genre,
               badge: requiresWarning ? 'WARNING' : null,
               onTap: () {
                 if (requiresWarning) {
