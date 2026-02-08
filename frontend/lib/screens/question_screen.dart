@@ -10,12 +10,14 @@ class QuestionScreen extends StatefulWidget {
     required this.fortuneTypeKey,
     this.showAiInterpretation = true,
     this.allowManualAi = true,
+    this.useDetailedQuestionForm = false,
   });
 
   final String title;
   final String fortuneTypeKey;
   final bool showAiInterpretation;
   final bool allowManualAi;
+  final bool useDetailedQuestionForm;
 
   @override
   State<QuestionScreen> createState() => _QuestionScreenState();
@@ -44,6 +46,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
           initialUnit: widget.fortuneTypeKey == 'flower_timing' ? _unit : null,
           showAiInterpretation: widget.showAiInterpretation,
           allowManualAi: widget.allowManualAi,
+          useDetailedQuestionForm: widget.useDetailedQuestionForm,
         ),
       ),
     );

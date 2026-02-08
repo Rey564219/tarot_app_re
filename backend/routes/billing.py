@@ -21,6 +21,10 @@ class SubscriptionVerifyRequest(BaseModel):
     subscription_id: str | None = None
 
 
+class MockPurchaseRequest(BaseModel):
+    fortune_type_key: str
+
+
 @router.post('/verify/purchase')
 def verify_purchase(payload: PurchaseVerifyRequest, user_id: str = Depends(get_user_id)):
     platform = payload.platform
@@ -51,6 +55,40 @@ def verify_purchase(payload: PurchaseVerifyRequest, user_id: str = Depends(get_u
             conn.commit()
 
     return {'ok': True}
+
+
+@router.post('/mock/purchase')
+def mock_purchase(payload: MockPurchaseRequest, user_id: str = Depends(get_user_id)):
+    fortune_type_key = payload.fortune_type_key
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                'SELECT id FROM fortune_types WHERE key = %s AND access_type_default = %s',
+                (fortune_type_key, 'one_time'),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=400, detail='Fortune type not purchasable')
+            fortune_type_id = row[0]
+
+            cur.execute(
+                'SELECT id FROM products WHERE fortune_type_id = %s AND active = true ORDER BY id LIMIT 1',
+                (fortune_type_id,),
+            )
+            product = cur.fetchone()
+            if not product:
+                raise HTTPException(status_code=404, detail='Product not found')
+            product_id = product[0]
+
+            purchase_id = str(uuid4())
+            store_transaction_id = f'mock-{purchase_id}'
+            cur.execute(
+                'INSERT INTO purchases (id, user_id, product_id, platform, store_transaction_id, status, verified_at) VALUES (%s, %s, %s, %s, %s, %s, now())',
+                (purchase_id, user_id, product_id, 'mock', store_transaction_id, 'verified'),
+            )
+            conn.commit()
+
+    return {'ok': True, 'purchase_id': purchase_id}
 
 
 @router.post('/verify/subscription')

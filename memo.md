@@ -106,3 +106,6 @@ WHERE reading_id IN (
 );
 
 COMMIT;
+
+広告
+実サービスで広告を使う際は ad_manager.dart 内のテスト用ユニットIDを本番IDに置き換えてからビルドしてください。

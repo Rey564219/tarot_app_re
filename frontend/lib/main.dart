@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_session.dart';
+import 'ads/ad_manager.dart';
 import 'screens/home_screen.dart';
 import 'screens/fortune_screen.dart';
 import 'screens/shop_screen.dart';
@@ -11,8 +12,9 @@ import 'screens/warning_screen.dart';
 import 'screens/reading_screen.dart';
 import 'screens/product_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AdManager.instance.initialize();
   runApp(const TarotApp());
 }
 
@@ -66,8 +68,8 @@ class _TarotAppState extends State<TarotApp> {
           return MaterialPageRoute(builder: (_) => ReadingScreen(readingId: id));
         }
         if (name.startsWith('/product/')) {
-          final id = name.replaceFirst('/product/', '');
-          return MaterialPageRoute(builder: (_) => ProductScreen(productId: id));
+          final key = name.replaceFirst('/product/', '');
+          return MaterialPageRoute(builder: (_) => ProductScreen(fortuneTypeKey: key));
         }
         return null;
       },

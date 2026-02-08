@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app_session.dart';
+import '../widgets/spread_view.dart';
 
 class ReadingScreen extends StatefulWidget {
   const ReadingScreen({
@@ -113,6 +114,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
           _questionSection(),
           const SizedBox(height: 12),
         ],
+        SpreadView(resultJson: result),
+        const SizedBox(height: 16),
         if (baseCard != null)
           Card(
             child: ListTile(
@@ -142,18 +145,10 @@ class _ReadingScreenState extends State<ReadingScreen> {
             );
           }).toList(),
         ],
-        
         const SizedBox(height: 16),
-
         _aiPlaceholder(),
         const SizedBox(height: 12),
         if (widget.allowManualAi) _historySection(),
-        if (widget.allowManualAi && _showRawJson(result)) ...[
-          const SizedBox(height: 16),
-          Text('Raw JSON', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(AppSession.prettyJson(result)),
-        ],
       ],
     );
   }
@@ -354,18 +349,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       'today_deep_work',
       'today_deep_money',
       'today_deep_trouble',
-    };
-    return !hiddenTypes.contains(type);
-  }
-
-  bool _showRawJson(Map result) {
-    final type = result['type']?.toString() ?? '';
-    const hiddenTypes = {
-      'today_free',
-      'today_deep_love',
-      'today_deep_work',
-      'today_deep_money',
-      'today_deep_trouble',
+      'compatibility',
     };
     return !hiddenTypes.contains(type);
   }

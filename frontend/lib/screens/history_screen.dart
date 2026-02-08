@@ -48,7 +48,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'History',
-      subtitle: '???????????????',
+      subtitle: '過去の占い履歴を確認できます。',
       actions: [
         IconButton(icon: const Icon(Icons.refresh), onPressed: _loadReadings),
       ],
@@ -64,8 +64,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (!_loading && _error == null && _readings.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text('?????????????',
-                  style: Theme.of(context).textTheme.bodyMedium),
+              child: Text(
+                '履歴はまだありません。',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
           ..._readings.map((reading) {
             return Container(

@@ -59,7 +59,10 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
 
     admin_user = is_admin_user(user_id)
     fortune_type_id, access_type_default, requires_warning = ft
+    if access_type_default == 'free':
+        access_type_default = 'life'
     access_type_used = access_type_default
+    consumed_purchase_id = None
 
     if requires_warning and not admin_user:
         cur.execute(
@@ -79,11 +82,13 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
 
     if access_type_default == 'one_time' and not admin_user:
         cur.execute(
-            'SELECT p.id FROM purchases p JOIN products pr ON p.product_id = pr.id WHERE p.user_id = %s AND p.status = %s AND pr.fortune_type_id = %s LIMIT 1',
+            'SELECT p.id FROM purchases p JOIN products pr ON p.product_id = pr.id WHERE p.user_id = %s AND p.status = %s AND pr.fortune_type_id = %s ORDER BY p.verified_at ASC NULLS LAST, p.id ASC LIMIT 1 FOR UPDATE',
             (user_id, 'verified', fortune_type_id),
         )
-        if not cur.fetchone():
+        row = cur.fetchone()
+        if not row:
             raise HTTPException(status_code=403, detail='Purchase required')
+        consumed_purchase_id = row[0]
 
     if access_type_default == 'life' and not admin_user:
         cur.execute(
@@ -130,6 +135,11 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
             seed,
         ),
     )
+    if consumed_purchase_id:
+        cur.execute(
+            'UPDATE purchases SET status = %s WHERE id = %s',
+            ('consumed', consumed_purchase_id),
+        )
     return reading_id, result_json
 
 

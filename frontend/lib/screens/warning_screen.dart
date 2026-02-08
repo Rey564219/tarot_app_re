@@ -23,9 +23,9 @@ class _WarningScreenState extends State<WarningScreen> {
         'fortune_type_key': widget.fortuneTypeKey,
       });
       if (widget.onAccepted != null) {
-        widget.onAccepted?.call();
         if (!mounted) return;
         Navigator.of(context).pop();
+        widget.onAccepted?.call();
       } else {
         await _navigateToProduct();
       }
@@ -40,36 +40,12 @@ class _WarningScreenState extends State<WarningScreen> {
   }
 
   Future<void> _navigateToProduct() async {
-    try {
-      final types = await AppSession.instance.api.getList('/master/fortune-types');
-      final products = await AppSession.instance.api.getList('/master/products');
-      final fortuneType = types.firstWhere(
-        (ft) => ft['key'] == widget.fortuneTypeKey,
-        orElse: () => null,
-      );
-      if (fortuneType == null) {
-        throw Exception('Fortune type not found');
-      }
-      final product = products.firstWhere(
-        (p) => p['fortune_type_id'] == fortuneType['id'],
-        orElse: () => null,
-      );
-      if (product == null) {
-        throw Exception('Product not found');
-      }
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => ProductScreen(productId: product['id']),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('次の画面に進めませんでした: $e')),
-      );
-      Navigator.of(context).pop();
-    }
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => ProductScreen(fortuneTypeKey: widget.fortuneTypeKey),
+      ),
+    );
   }
 
   @override

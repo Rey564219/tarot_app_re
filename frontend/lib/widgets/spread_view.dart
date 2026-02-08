@@ -370,12 +370,16 @@ class SpreadView extends StatelessWidget {
   }
 
   Widget _compatibilityLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
-    final cardW = maxWidth * 0.10;
+    const spacing = 12.0;
+    final available = math.max(0, maxWidth - spacing * 2);
+    final cardW = math.min(130.0, available / 3);
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        for (var i = 0; i < cards.length && i < 3; i++)
-          _cardTile(context, cards[i], cardW),
+        for (var i = 0; i < cards.length && i < 3; i++) ...[
+          if (i > 0) const SizedBox(width: spacing),
+          SizedBox(width: cardW, child: _cardTile(context, cards[i], cardW)),
+        ],
       ],
     );
   }

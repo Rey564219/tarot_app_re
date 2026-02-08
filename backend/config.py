@@ -31,6 +31,9 @@ GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID')
 AD_REWARD_MAX_PER_HOUR = int(env('AD_REWARD_MAX_PER_HOUR', '5'))
 AD_REWARD_MAX_PER_DAY = int(env('AD_REWARD_MAX_PER_DAY', '20'))
 
+# Life settings
+LIFE_MAX = int(env('LIFE_MAX', '5'))
+
 # Dev fallback
 ALLOW_X_USER_ID_FALLBACK = env('ALLOW_X_USER_ID_FALLBACK', 'true').lower() == 'true'
 
