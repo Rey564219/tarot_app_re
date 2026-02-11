@@ -52,23 +52,27 @@ class ApiClient {
   Future<List<dynamic>> getList(String path) async {
     final response = await http.get(Uri.parse('$baseUrl$path'), headers: _headers());
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      final decoded = jsonDecode(response.body);
+      final decoded = jsonDecode(_decodeBody(response));
       if (decoded is List) {
         return decoded;
       }
       throw Exception('Expected list response');
     }
-    throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    throw Exception('HTTP ${response.statusCode}: ${_decodeBody(response)}');
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      final decoded = jsonDecode(response.body);
+      final decoded = jsonDecode(_decodeBody(response));
       if (decoded is Map<String, dynamic>) {
         return decoded;
       }
       throw Exception('Expected object response');
     }
-    throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    throw Exception('HTTP ${response.statusCode}: ${_decodeBody(response)}');
+  }
+
+  String _decodeBody(http.Response response) {
+    return utf8.decode(response.bodyBytes);
   }
 }

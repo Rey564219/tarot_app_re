@@ -67,12 +67,12 @@ class _ProductScreenState extends State<ProductScreen> {
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('??????????')),
+        const SnackBar(content: Text('\u6c7a\u6e08\u304c\u5b8c\u4e86\u3057\u307e\u3057\u305f\u3002')),
       );
       _openQuestion();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _purchaseError = '?????????: $e');
+      setState(() => _purchaseError = '\u6c7a\u6e08\u306b\u5931\u6557\u3057\u307e\u3057\u305f: $e');
     } finally {
       if (mounted) {
         setState(() => _purchasing = false);
@@ -105,15 +105,15 @@ class _ProductScreenState extends State<ProductScreen> {
     final title = _fortuneType?['name'] ?? _product?['name'] ?? 'Product';
     final description = _fortuneType?['description'];
     return AppScaffold(
-      title: '????',
-      subtitle: '????????????????????????',
+      title: '\u5546\u54c1\u8a73\u7d30',
+      subtitle: '\u5185\u5bb9\u3092\u78ba\u8a8d\u3057\u3066\u3001\u6c7a\u6e08\u5f8c\u306b\u30ab\u30fc\u30c9\u3092\u5f15\u3044\u3066\u304f\u3060\u3055\u3044\u3002',
       actions: [
         IconButton(icon: const Icon(Icons.refresh), onPressed: _loadProduct),
       ],
       child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Text(_error!, style: const TextStyle(color: Colors.red))
+              ? Text('\u53d6\u5f97\u306b\u5931\u6557\u3057\u307e\u3057\u305f: \$_error', style: const TextStyle(color: Colors.red))
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -135,7 +135,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
-                        '?????????????????????????',
+                        '\u30ef\u30f3\u30bf\u30a4\u30e0\u9271\u5bdf\u3067\u3059\u3002\u6c7a\u6e08\u5b8c\u4e86\u5f8c\u306b\u30ab\u30fc\u30c9\u3092\u5f15\u3051\u307e\u3059\u3002',
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -154,7 +154,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.payment),
-                        label: Text(_purchasing ? '???...' : '??????'),
+                        label: Text(_purchasing ? '\u6c7a\u6e08\u4e2d...' : '\u6c7a\u6e08\u3057\u3066\u5360\u3046'),
                       ),
                     ),
                   ],
@@ -168,11 +168,11 @@ class _ProductScreenState extends State<ProductScreen> {
     final currencyRaw = product['currency']?.toString().toUpperCase() ?? '';
     if (priceCents is num) {
       if (currencyRaw == 'JPY') {
-        return '??: \u00a5${priceCents.toInt()}';
+        return '\u4fa1\u683c: \u00a5${priceCents.toInt()}';
       }
       final value = (priceCents / 100).toStringAsFixed(2);
-      return '??: $value $currencyRaw';
+      return '\u4fa1\u683c: $value $currencyRaw';
     }
-    return '??: $priceCents $currencyRaw';
+    return '\u4fa1\u683c: $priceCents $currencyRaw';
   }
 }

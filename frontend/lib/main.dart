@@ -25,9 +25,43 @@ class TarotApp extends StatefulWidget {
   State<TarotApp> createState() => _TarotAppState();
 }
 
+TextStyle? _jpFallback(TextStyle? style) {
+  if (style == null) return null;
+  return style.copyWith(
+    fontFamilyFallback: const ['Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Yu Gothic UI', 'sans-serif'],
+  );
+}
+
+TextTheme _applyJpFallback(TextTheme theme) {
+  return TextTheme(
+    displayLarge: _jpFallback(theme.displayLarge),
+    displayMedium: _jpFallback(theme.displayMedium),
+    displaySmall: _jpFallback(theme.displaySmall),
+    headlineLarge: _jpFallback(theme.headlineLarge),
+    headlineMedium: _jpFallback(theme.headlineMedium),
+    headlineSmall: _jpFallback(theme.headlineSmall),
+    titleLarge: _jpFallback(theme.titleLarge),
+    titleMedium: _jpFallback(theme.titleMedium),
+    titleSmall: _jpFallback(theme.titleSmall),
+    bodyLarge: _jpFallback(theme.bodyLarge),
+    bodyMedium: _jpFallback(theme.bodyMedium),
+    bodySmall: _jpFallback(theme.bodySmall),
+    labelLarge: _jpFallback(theme.labelLarge),
+    labelMedium: _jpFallback(theme.labelMedium),
+    labelSmall: _jpFallback(theme.labelSmall),
+  );
+}
+
 class _TarotAppState extends State<TarotApp> {
   @override
   Widget build(BuildContext context) {
+    final baseTextTheme = GoogleFonts.cormorantGaramondTextTheme();
+    final customTextTheme = baseTextTheme.copyWith(
+      titleLarge: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w700),
+      titleMedium: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w600),
+      bodyMedium: GoogleFonts.sourceSans3(fontWeight: FontWeight.w500),
+      bodySmall: GoogleFonts.sourceSans3(),
+    );
     final theme = ThemeData(
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
@@ -37,12 +71,7 @@ class _TarotAppState extends State<TarotApp> {
         onSurface: Color(0xFF1B1B1B),
       ),
       scaffoldBackgroundColor: const Color(0xFFF7F2EA),
-      textTheme: GoogleFonts.cormorantGaramondTextTheme().copyWith(
-        titleLarge: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w700),
-        titleMedium: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w600),
-        bodyMedium: GoogleFonts.sourceSans3(fontWeight: FontWeight.w500),
-        bodySmall: GoogleFonts.sourceSans3(),
-      ),
+      textTheme: _applyJpFallback(customTextTheme),
       useMaterial3: true,
     );
 
