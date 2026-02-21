@@ -80,15 +80,18 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
         if not cur.fetchone():
             raise HTTPException(status_code=403, detail='Subscription required')
 
-    if access_type_default == 'one_time' and not admin_user:
-        cur.execute(
-            'SELECT p.id FROM purchases p JOIN products pr ON p.product_id = pr.id WHERE p.user_id = %s AND p.status = %s AND pr.fortune_type_id = %s ORDER BY p.verified_at ASC NULLS LAST, p.id ASC LIMIT 1 FOR UPDATE',
-            (user_id, 'verified', fortune_type_id),
-        )
-        row = cur.fetchone()
-        if not row:
-            raise HTTPException(status_code=403, detail='Purchase required')
-        consumed_purchase_id = row[0]
+    seed_override = None
+    if access_type_default == 'one_time':
+        if not admin_user:
+            cur.execute(
+                'SELECT p.id FROM purchases p JOIN products pr ON p.product_id = pr.id WHERE p.user_id = %s AND p.status = %s AND pr.fortune_type_id = %s ORDER BY p.verified_at ASC NULLS LAST, p.id ASC LIMIT 1 FOR UPDATE',
+                (user_id, 'verified', fortune_type_id),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=403, detail='Purchase required')
+            consumed_purchase_id = row[0]
+        seed_override = f'{user_id}:{fortune_type_key}:{uuid4()}'
 
     if access_type_default == 'life' and not admin_user:
         cur.execute(
@@ -119,8 +122,8 @@ def _execute_one(cur, user_id: str, fortune_type_key: str, input_json: dict | No
         if existing:
             return existing
 
-    seed = build_seed(user_id, fortune_type_key)
-    result_json = generate_reading(user_id, fortune_type_key, input_json)
+    seed = seed_override or build_seed(user_id, fortune_type_key)
+    result_json = generate_reading(user_id, fortune_type_key, input_json, seed_override=seed)
 
     reading_id = str(uuid4())
     cur.execute(

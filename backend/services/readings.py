@@ -69,8 +69,13 @@ def build_seed(user_id: str, fortune_type_key: str, date_str: str | None = None)
     return f'{user_id}:{date_str}:{base_key}'
 
 
-def generate_reading(user_id: str, fortune_type_key: str, input_json: dict | None = None) -> dict:
-    base_seed = build_seed(user_id, fortune_type_key)
+def generate_reading(
+    user_id: str,
+    fortune_type_key: str,
+    input_json: dict | None = None,
+    seed_override: str | None = None,
+) -> dict:
+    base_seed = seed_override or build_seed(user_id, fortune_type_key)
     base_rng = random.Random(_seed_to_int(base_seed))
 
     if fortune_type_key.startswith('hexagram_'):
