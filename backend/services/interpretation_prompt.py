@@ -74,6 +74,7 @@ def build_prompt(input_json: dict) -> str:
         'Tone: warm, honest, and practical.',
         'Avoid vague language; be specific and actionable.',
         'Use consistent sentence style (desu/masu).',
+        'When mentioning any tarot card, copy the exact English card name shown in the Cards section (e.g., "Knight of Cups"). Do not translate or alter card names.',
     ]
 
     if fortune_key == 'flower_timing':
@@ -144,6 +145,7 @@ def build_prompt(input_json: dict) -> str:
             f'Fortune key: {fortune_key}' if fortune_key else 'Fortune key: -',
             f'Focus: {hint}',
             'Cards:',
+            'Use the following card names verbatim whenever you mention them.',
         ]
     )
 
