@@ -317,6 +317,44 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+  /shop/items:
+    get:
+      summary: List physical shop items
+      responses:
+        '200':
+          description: Shop items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopItemsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /shop/checkout/start:
+    post:
+      summary: Start checkout for physical goods
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShopCheckoutRequest'
+      responses:
+        '200':
+          description: Checkout URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopCheckoutResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /affiliate/click:
     post:
       summary: Track affiliate click
@@ -368,6 +406,12 @@ components:
       scheme: bearer
       bearerFormat: JWT
   responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
       description: Unauthorized
       content:
@@ -597,6 +641,50 @@ components:
           nullable: true
         ads_disabled:
           type: boolean
+    ShopItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price_cents:
+          type: integer
+        currency:
+          type: string
+        payment_methods:
+          type: array
+          items:
+            type: string
+            enum: [paypay, stripe]
+    ShopItemsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShopItem'
+    ShopCheckoutRequest:
+      type: object
+      required: [item_id, payment_method]
+      properties:
+        item_id:
+          type: string
+        payment_method:
+          type: string
+          enum: [paypay, stripe]
+    ShopCheckoutResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        payment_method:
+          type: string
+          enum: [paypay, stripe]
+        checkout_url:
+          type: string
+        item:
+          $ref: '#/components/schemas/ShopItem'
     AffiliateClickRequest:
       type: object
       required: [affiliate_link_id]

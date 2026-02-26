@@ -40,13 +40,15 @@
 - Input form → `POST /readings/execute` with `fortune_type_key=compatibility` and `input_json`
 
 ## Shop
-- Product list
-  - `GET /master/products`
-- Purchase
-  - App store purchase → receipt
-  - `POST /billing/verify/purchase`
-- Execute purchased fortune
-  - `POST /readings/execute` with matching `fortune_type_key`
+- Fortune billing (digital fortunes/subscription)
+  - Google Play purchase/subscription only
+  - One-time fortune: receipt → `POST /billing/verify/purchase`
+  - Subscription: receipt → `POST /billing/verify/subscription`
+- Physical goods (天然石・物販)
+  - `GET /shop/items`
+  - User chooses payment method: `paypay` or `stripe`
+  - `POST /shop/checkout/start` with `item_id`, `payment_method`
+  - Open returned `checkout_url` in browser
 
 ## Warning (犯罪/不正/トライアングル)
 - Before execute

@@ -119,9 +119,10 @@ class SpreadView extends StatelessWidget {
   }
 
   Widget _cardTile(BuildContext context, Map<String, dynamic> card, double width) {
-    final name = card['name']?.toString() ?? '';
+    final name = _cardDisplayName(card);
     final position = card['position']?.toString() ?? '';
     final upright = card['upright'];
+    final isReversed = upright == false;
     final showOrientation = _layoutForType(resultJson) != _SpreadLayout.flower;
     final orientationText = upright == null
         ? null
@@ -135,16 +136,19 @@ class SpreadView extends StatelessWidget {
             aspectRatio: 3 / 5,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                _cardAssetPath(card),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: const Color(0xFFEEE5DA),
-                  child: Center(
-                    child: Text(
-                      name.isEmpty ? 'Card' : name,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall,
+              child: Transform.rotate(
+                angle: isReversed ? math.pi : 0,
+                child: Image.asset(
+                  _cardAssetPath(card),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: const Color(0xFFEEE5DA),
+                    child: Center(
+                      child: Text(
+                        name.isEmpty ? 'Card' : name,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ),
                   ),
                 ),
@@ -398,13 +402,18 @@ class SpreadView extends StatelessWidget {
   }
 
   String _cardAssetPath(Map<String, dynamic> card) {
-    final name = card['name']?.toString() ?? 'card';
+    final name = _cardDisplayName(card);
     final normalized = name
         .toLowerCase()
         .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
         .replaceAll(RegExp(r'_+'), '_')
         .replaceAll(RegExp(r'^_|_$'), '');
-    return 'assets/cards/$normalized.png';
+    final slug = normalized.isEmpty ? 'card' : normalized;
+    return 'assets/cards/tarot/$slug.png';
+  }
+
+  String _cardDisplayName(Map<String, dynamic> card) {
+    return card['name']?.toString() ?? card['card_name']?.toString() ?? '';
   }
 }
 
