@@ -332,6 +332,9 @@ class _DrawScreenState extends State<DrawScreen> {
       const labels = ['相手', '相性', '自分'];
       if (index >= 0 && index < labels.length) return labels[index];
     }
+    if (type == 'partner_sexual') {
+      return '';
+    }
     if (type == 'today_deep') {
       const labels = ['恋愛', '仕事', '金運', 'トラブル'];
       if (index >= 0 && index < labels.length) return labels[index];

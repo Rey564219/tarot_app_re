@@ -103,6 +103,9 @@ class SpreadView extends StatelessWidget {
       const labels = ['相手', '相性', '自分'];
       if (index >= 0 && index < labels.length) return labels[index];
     }
+    if (type == 'partner_sexual') {
+      return '';
+    }
     return fallback;
   }
 
@@ -218,33 +221,43 @@ class SpreadView extends StatelessWidget {
     final size = maxWidth;
     final cardW = maxWidth * 0.10;
     final cardH = cardW / 0.6;
-    final centerX = size * 0.34;
-    final centerY = size * 0.42;
-    final gap = cardW * 0.30;
+    final tileH = cardH + 62;
+    final centerLeft = size * 0.26;
+    final centerTop = size * 0.36;
+    final verticalGap = tileH * 0.22;
+    final horizontalGap = cardW * 0.70;
 
-    final center = Offset(centerX - cardW / 2, centerY - cardH / 2);
-    final above = Offset(centerX - cardW / 2, centerY - cardH - gap);
-    final below = Offset(centerX - cardW / 2, centerY + gap);
-    final left = Offset(centerX - cardW - gap, centerY - cardH / 2);
-    final right = Offset(centerX + cardW + gap, centerY - cardH / 2);
+    final center = Offset(centerLeft, centerTop);
+    final above = Offset(centerLeft, centerTop - tileH - verticalGap);
+    final below = Offset(centerLeft, centerTop + tileH + verticalGap);
+    final left = Offset(centerLeft - cardW - horizontalGap, centerTop);
+    final right = Offset(centerLeft + cardW + horizontalGap, centerTop);
+
     final columnX = size * 0.72;
-    final colTop = size * 0.08;
-    final colGap = cardH * 0.12;
+    final colTop = above.dy;
+    final colGap = tileH * 0.16;
+    final totalHeight = math.max(
+      size * 0.9,
+      math.max(
+        below.dy + tileH + 12,
+        colTop + tileH * 4 + colGap * 3 + 12,
+      ),
+    );
 
     return SizedBox(
       width: size,
-      height: size * 0.9,
+      height: totalHeight,
       child: Stack(
         children: [
           if (cards.isNotEmpty)
             Positioned(left: center.dx, top: center.dy, width: cardW, child: _cardTile(context, cards[0], cardW)),
           if (cards.length > 1)
             Positioned(
-              left: center.dx,
-              top: center.dy,
+              left: center.dx + cardW * 0.08,
+              top: center.dy - tileH * 0.04,
               width: cardW,
               child: Transform.rotate(
-                angle: math.pi / 2,
+                angle: math.pi / 2 - 0.12,
                 child: _cardTile(context, cards[1], cardW),
               ),
             ),

@@ -186,7 +186,7 @@ def generate_reading(
             'type': 'partner_sexual',
             'fortune_type_key': fortune_type_key,
             'cards': cards,
-            'slots': _make_slots(cards, ['動機', 'チャンス', '正当化']),
+            'slots': _make_slots(cards, ['', '', '']),
             'seed': base_seed,
         }
 

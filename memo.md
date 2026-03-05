@@ -53,8 +53,7 @@ frontend
 flutter run -d chrome --dart-define=DEV_USER_ID=e154d397-dff7-4780-b5c4-5aa3a3889a7d --dart-define=DEV_AUTH_TOKEN=test
 
 backend
-python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port
- 8000
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 
 
 データクリア
@@ -109,3 +108,25 @@ COMMIT;
 
 広告
 実サービスで広告を使う際は ad_manager.dart 内のテスト用ユニットIDを本番IDに置き換えてからビルドしてください。
+
+
+設定先
+
+決済リンク設定はバックエンド環境変数です。定義箇所は config.py:55-59、参照ロジックは shop.py:87-106 と shop.py:163 です。
+フロントは POST /shop/checkout/start に payment_method: "paypay" | "stripe" を送るだけです（shop_screen.dart:40-47）。
+PayPay（リンク方式）
+
+PAYPAY_PAYMENT_LINKS_JSON に item_id -> URL のJSONを設定します。default キーも使えます（shop.py:87-91）。
+例: PAYPAY_PAYMENT_LINKS_JSON={"love_stone_set":"https://...","default":"https://..."}
+クレカ（Stripe）
+
+方式A: STRIPE_PAYMENT_LINKS_JSON に item_id -> Stripe Payment Link URL を設定（設定があればこれを優先、shop.py:95-99）。
+方式B: 動的Checkoutを使う場合は STRIPE_SECRET_KEY / STRIPE_SUCCESS_URL / STRIPE_CANCEL_URL を設定（shop.py:100-106）。
+stripe パッケージは既に入っています（requirements.txt:11）。
+商品ID（JSONキー）
+
+love_stone_set, work_stone_set, health_stone_set, money_stone_set, amulet_stone_set, custom_consulting, kink_trump（shop.py:17-58）。
+Docker Compose利用時の注意
+
+現状の backend.environment に決済系変数が未定義なので、追加しないとコンテナで反映されません（docker-compose.yml:24-40）。
+追加例: STRIPE_SECRET_KEY, STRIPE_SUCCESS_URL, STRIPE_CANCEL_URL, PAYPAY_PAYMENT_LINKS_JSON, STRIPE_PAYMENT_LINKS_JSON。

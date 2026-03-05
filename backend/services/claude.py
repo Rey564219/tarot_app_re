@@ -26,6 +26,8 @@ class ClaudeClient:
         self.api_key = os.environ.get('ANTHROPIC_API_KEY', '')
         self.model = os.environ.get('ANTHROPIC_MODEL', _DEFAULT_MODEL)
         self.api_url = os.environ.get('ANTHROPIC_API_URL', 'https://api.anthropic.com/v1/messages')
+        self.max_tokens_default = int(os.environ.get('ANTHROPIC_MAX_TOKENS', '1800'))
+        self.max_tokens_today_deep = int(os.environ.get('ANTHROPIC_MAX_TOKENS_TODAY_DEEP', '2600'))
         self.max_retries = int(os.environ.get('ANTHROPIC_MAX_RETRIES', '3'))
         self.retry_backoff = float(os.environ.get('ANTHROPIC_RETRY_BACKOFF', '1.5'))
         self.allow_fallback = os.environ.get('ALLOW_AI_FALLBACK', 'true').lower() == 'true'
@@ -72,7 +74,7 @@ class ClaudeClient:
         prompt = build_prompt(input_json)
         payload = {
             'model': self.model,
-            'max_tokens': 800,
+            'max_tokens': self._resolve_max_tokens(input_json),
             'temperature': 0.7,
             'messages': [
                 {'role': 'user', 'content': prompt},
@@ -105,6 +107,11 @@ class ClaudeClient:
                 for block in data.get('content', []):
                     if block.get('type') == 'text':
                         text += block.get('text', '')
+                if data.get('stop_reason') == 'max_tokens':
+                    logger.warning(
+                        'Anthropic output may be truncated by max_tokens=%s. Consider increasing ANTHROPIC_MAX_TOKENS.',
+                        payload.get('max_tokens'),
+                    )
                 if not text.strip():
                     logger.warning('Anthropic API returned empty text content.')
                 return prompt, text.strip()
@@ -150,6 +157,14 @@ class ClaudeClient:
 
     def _sleep(self, attempt: int) -> None:
         time.sleep(self.retry_backoff * attempt)
+
+    def _resolve_max_tokens(self, input_json: dict) -> int:
+        if isinstance(input_json, dict):
+            fortune_key = str(input_json.get('fortune_type_key') or '')
+            read_type = str(input_json.get('type') or '')
+            if fortune_key.startswith('today_deep_') or read_type == 'today_deep':
+                return max(1, self.max_tokens_today_deep)
+        return max(1, self.max_tokens_default)
 
     def _fallback_text(self, input_json: dict) -> str:
         card_names = []

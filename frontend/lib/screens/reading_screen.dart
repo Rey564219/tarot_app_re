@@ -286,12 +286,13 @@ class _ReadingScreenState extends State<ReadingScreen> {
 
   Map<String, dynamic> _buildInterpretationInput(Map result) {
     final showQuestion = _showQuestionSection(result);
+    final type = result['type']?.toString() ?? '';
     final slots = result['slots'] as List<dynamic>? ?? [];
     final fortuneTypeKey = result['fortune_type_key'];
     final cards = slots.map((slot) {
       final card = slot['card'] ?? {};
       return {
-        'position': slot['position'],
+        'position': type == 'partner_sexual' ? '' : slot['position'],
         'card_name': card['name'],
         'arcana': card['arcana'],
         'suit': card['suit'],
