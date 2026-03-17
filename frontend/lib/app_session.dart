@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
@@ -10,14 +11,21 @@ class AppSession {
   static final AppSession instance = AppSession._();
 
   static const _defaultBaseUrl = 'http://127.0.0.1:8000';
-  static const _baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: _defaultBaseUrl,
-  );
   static const _devUserId = String.fromEnvironment('DEV_USER_ID', defaultValue: '');
   static const _devAuthToken = String.fromEnvironment('DEV_AUTH_TOKEN', defaultValue: '');
 
-  final ApiClient api = ApiClient(baseUrl: _baseUrl);
+  final ApiClient api = ApiClient(baseUrl: _resolveBaseUrl());
+
+  static String _resolveBaseUrl() {
+    const fromEnv = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (fromEnv.isNotEmpty) {
+      return fromEnv;
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000';
+    }
+    return _defaultBaseUrl;
+  }
 
   static const _tokenKey = 'auth_token';
   static const _userIdKey = 'user_id';

@@ -162,9 +162,13 @@ FROM (
   UNION ALL SELECT id, 1, '状況' FROM spreads WHERE key = 'triangle_crime'
   UNION ALL SELECT id, 2, '関係性' FROM spreads WHERE key = 'triangle_crime'
   UNION ALL SELECT id, 3, '注意点' FROM spreads WHERE key = 'triangle_crime'
-  UNION ALL SELECT id, 1, '表面' FROM spreads WHERE key = 'partner_sexual'
-  UNION ALL SELECT id, 2, '深層' FROM spreads WHERE key = 'partner_sexual'
-  UNION ALL SELECT id, 3, '相性' FROM spreads WHERE key = 'partner_sexual'
+  UNION ALL SELECT id, 1, '1' FROM spreads WHERE key = 'partner_sexual'
+  UNION ALL SELECT id, 2, '2' FROM spreads WHERE key = 'partner_sexual'
+  UNION ALL SELECT id, 3, '3' FROM spreads WHERE key = 'partner_sexual'
+  UNION ALL SELECT id, 4, '4' FROM spreads WHERE key = 'partner_sexual'
+  UNION ALL SELECT id, 5, '5' FROM spreads WHERE key = 'partner_sexual'
+  UNION ALL SELECT id, 6, '6' FROM spreads WHERE key = 'partner_sexual'
+  UNION ALL SELECT id, 7, '7' FROM spreads WHERE key = 'partner_sexual'
 ) AS rows
 ON CONFLICT DO NOTHING;
 

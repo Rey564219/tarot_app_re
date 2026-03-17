@@ -104,7 +104,7 @@ class SpreadView extends StatelessWidget {
       if (index >= 0 && index < labels.length) return labels[index];
     }
     if (type == 'partner_sexual') {
-      return '';
+      return fallback.isEmpty ? '${index + 1}' : fallback;
     }
     return fallback;
   }
@@ -130,10 +130,14 @@ class SpreadView extends StatelessWidget {
     final orientationText = upright == null
         ? null
         : (upright == true ? '正位置' : '逆位置');
+    final baseTextStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontSize: 12,
+          height: 1.2,
+        );
     return SizedBox(
       width: width,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           AspectRatio(
             aspectRatio: 3 / 5,
@@ -150,7 +154,7 @@ class SpreadView extends StatelessWidget {
                       child: Text(
                         name.isEmpty ? 'Card' : name,
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: baseTextStyle,
                       ),
                     ),
                   ),
@@ -158,30 +162,50 @@ class SpreadView extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           if (showCardName && name.isNotEmpty)
-            Text(name, style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: baseTextStyle,
+            ),
           if (showOrientation && orientationText != null)
-            Text(orientationText, style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              orientationText,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: baseTextStyle,
+            ),
           if (showPosition && position.isNotEmpty)
-            Text(position, style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              position,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: baseTextStyle,
+            ),
         ],
       ),
     );
   }
 
   Widget _simpleGrid(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
-    final cardWidth = maxWidth * 0.10;
+    final columns = maxWidth < 420 ? 4 : 5;
+    final spacing = 10.0;
+    final cardWidth = ((maxWidth - spacing * (columns - 1)) / columns).clamp(70.0, 108.0).toDouble();
     return Wrap(
       spacing: 10,
-      runSpacing: 10,
+      runSpacing: 14,
       children: cards.map((card) => _cardTile(context, card, cardWidth)).toList(),
     );
   }
 
   Widget _hexagramLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
     final size = maxWidth;
-    final cardW = maxWidth * 0.10;
+    final cardW = (maxWidth * 0.16).clamp(70.0, 100.0).toDouble();
     final cardH = cardW / 0.6;
     final center = Offset(size * 0.5, size * 0.42);
     final top = Offset(size * 0.5, size * 0.16);
@@ -219,7 +243,7 @@ class SpreadView extends StatelessWidget {
 
   Widget _celticCrossLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
     final size = maxWidth;
-    final cardW = maxWidth * 0.10;
+    final cardW = (maxWidth * 0.16).clamp(70.0, 100.0).toDouble();
     final cardH = cardW / 0.6;
     final tileH = cardH + 62;
     final centerLeft = size * 0.26;
@@ -299,7 +323,7 @@ class SpreadView extends StatelessWidget {
 
   Widget _triangleLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
     final size = maxWidth;
-    final cardW = maxWidth * 0.10;
+    final cardW = (maxWidth * 0.16).clamp(70.0, 100.0).toDouble();
     final cardH = cardW / 0.6;
     final top = Offset(size / 2 - cardW / 2, 0);
     final left = Offset(size * 0.2 - cardW / 2, cardH * 1.2);
@@ -324,7 +348,7 @@ class SpreadView extends StatelessWidget {
 
   Widget _flowerLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
     final size = maxWidth;
-    final cardW = maxWidth * 0.10;
+    final cardW = (maxWidth * 0.16).clamp(70.0, 100.0).toDouble();
     final cardH = cardW / 0.6;
     final center = size / 2;
     final radius = size * 0.36;
@@ -359,7 +383,7 @@ class SpreadView extends StatelessWidget {
 
   Widget _todayDeepLayout(BuildContext context, List<Map<String, dynamic>> cards, double maxWidth) {
     final size = maxWidth;
-    final cardW = maxWidth * 0.10;
+    final cardW = (maxWidth * 0.16).clamp(70.0, 100.0).toDouble();
     final cardH = cardW / 0.6;
     final center = Offset(size / 2 - cardW / 2, cardH * 0.6);
     final positions = [
@@ -415,6 +439,22 @@ class SpreadView extends StatelessWidget {
   }
 
   String _cardAssetPath(Map<String, dynamic> card) {
+    final type = (resultJson is Map) ? (resultJson['type']?.toString() ?? '') : '';
+    if (type == 'partner_sexual') {
+      final assetName = card['asset_name']?.toString();
+      if (assetName != null && assetName.isNotEmpty) {
+        return 'assets/cards/do_be_done_tramp/$assetName.PNG';
+      }
+      final suit = card['suit']?.toString() ?? '';
+      final rank = card['rank']?.toString() ?? '';
+      if (suit == 'Joker') {
+        return 'assets/cards/do_be_done_tramp/Joker_1.PNG';
+      }
+      final suitToken = suit == 'Spade' ? 'spade' : suit;
+      if (suitToken.isNotEmpty && rank.isNotEmpty) {
+        return 'assets/cards/do_be_done_tramp/${suitToken}_$rank.PNG';
+      }
+    }
     final name = _cardDisplayName(card);
     final normalized = name
         .toLowerCase()

@@ -7,6 +7,7 @@ from ..db import get_conn
 from ..services.claude import ClaudeClient
 from ..config import DISABLE_INTERPRETATION_LIMITS
 from ..services.card_meanings import get_card_meaning
+from ..services.partner_sexual import get_partner_card_meaning
 from ..services.interpretation_prompt import build_prompt
 from .security import get_user_id
 
@@ -228,6 +229,22 @@ def _enrich_input(cur, input_json: dict) -> dict:
     cards = input_json.get('cards')
     if not isinstance(cards, list) or not cards:
         return input_json
+    fortune_key = (input_json.get('fortune_type_key') or '').strip()
+
+    if fortune_key == 'partner_sexual':
+        enriched_cards = []
+        for card in cards:
+            if not isinstance(card, dict):
+                enriched_cards.append(card)
+                continue
+            updated = dict(card)
+            meaning = get_partner_card_meaning(updated)
+            if not updated.get('meaning_short'):
+                updated['meaning_short'] = meaning.get('short_meaning')
+            if not updated.get('keywords'):
+                updated['keywords'] = meaning.get('keywords') or []
+            enriched_cards.append(updated)
+        return {**input_json, 'cards': enriched_cards}
 
     names = [card.get('card_name') for card in cards if isinstance(card, dict) and card.get('card_name')]
     if not names:

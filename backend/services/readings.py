@@ -2,6 +2,8 @@ import hashlib
 import random
 from datetime import datetime, timezone
 
+from .partner_sexual import build_partner_profile, build_partner_sexual_deck
+
 MAJOR_ARCANA = [
     'The Fool',
     'The Magician',
@@ -52,6 +54,7 @@ MINOR_DECK = [
     for rank in MINOR_RANKS
 ]
 FULL_DECK = MAJOR_DECK + MINOR_DECK
+PARTNER_SEXUAL_DECK = build_partner_sexual_deck()
 
 
 def _seed_to_int(seed: str) -> int:
@@ -181,12 +184,14 @@ def generate_reading(
         }
 
     if fortune_type_key == 'partner_sexual':
-        cards = _draw_cards(base_rng, 3, major_only=False, include_upright=True)
+        cards = _draw_custom_cards(base_rng, PARTNER_SEXUAL_DECK, 7, include_upright=True)
+        profile = build_partner_profile(cards)
         return {
             'type': 'partner_sexual',
             'fortune_type_key': fortune_type_key,
             'cards': cards,
-            'slots': _make_slots(cards, ['', '', '']),
+            'slots': _make_slots(cards, [str(i) for i in range(1, 8)]),
+            'sexual_profile': profile,
             'seed': base_seed,
         }
 
@@ -226,6 +231,38 @@ def _draw_cards(
                 'arcana': base['arcana'],
                 'suit': base.get('suit'),
                 'rank': base.get('rank'),
+                'upright': rng.choice([True, False]) if include_upright else None,
+            }
+        )
+    return cards
+
+
+def _draw_custom_cards(
+    rng: random.Random,
+    deck: list[dict],
+    count: int,
+    include_upright: bool,
+    exclude_names: set[str] | None = None,
+) -> list[dict]:
+    if exclude_names:
+        available = [card for card in deck if card['name'] not in exclude_names]
+    else:
+        available = list(deck)
+
+    if count > len(available):
+        raise ValueError('Requested more cards than available in deck')
+
+    indices = rng.sample(range(len(available)), count)
+    cards: list[dict] = []
+    for idx in indices:
+        base = available[idx]
+        cards.append(
+            {
+                'name': base['name'],
+                'arcana': base['arcana'],
+                'suit': base.get('suit'),
+                'rank': base.get('rank'),
+                'asset_name': base.get('asset_name'),
                 'upright': rng.choice([True, False]) if include_upright else None,
             }
         )

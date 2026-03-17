@@ -56,6 +56,7 @@ class _DrawScreenState extends State<DrawScreen> {
 
   bool get _useDetailedForm => widget.useDetailedQuestionForm && _questionFormAllowed;
   bool get _useSimpleForm => !widget.useDetailedQuestionForm && _questionFormAllowed;
+  bool get _waitingForCombinedResult => _revealed && widget.showAiInterpretation && _loadingInterpretation;
 
   @override
   void initState() {
@@ -128,20 +129,16 @@ class _DrawScreenState extends State<DrawScreen> {
             const SizedBox(height: 12),
           ],
           if (_revealed) ...[
-            _cardsView(),
-            const SizedBox(height: 16),
-            if (widget.showAiInterpretation) ...[
-              _interpretationSection(),
-              const SizedBox(height: 12),
+            if (_waitingForCombinedResult)
+              _resultLoadingView()
+            else ...[
+              _cardsView(),
+              const SizedBox(height: 16),
+              if (widget.showAiInterpretation) ...[
+                _interpretationSection(),
+                const SizedBox(height: 12),
+              ],
             ],
-            if (_loading && widget.showAiInterpretation)
-              const Center(
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
           ] else
             SizedBox(
               width: double.infinity,
@@ -164,6 +161,22 @@ class _DrawScreenState extends State<DrawScreen> {
 
   Widget _cardsView() {
     return SpreadView(resultJson: _resultJson);
+  }
+
+  Widget _resultLoadingView() {
+    return const Center(
+      child: Column(
+        children: [
+          SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+          SizedBox(height: 10),
+          Text('Loading result...'),
+        ],
+      ),
+    );
   }
 
   Widget _interpretationSection() {
@@ -269,6 +282,7 @@ class _DrawScreenState extends State<DrawScreen> {
         'arcana': card['arcana'],
         'suit': card['suit'],
         'rank': card['rank'],
+        'asset_name': card['asset_name'],
         'upright': card['upright'],
         'meaning_short': null,
         'keywords': [],
@@ -283,6 +297,7 @@ class _DrawScreenState extends State<DrawScreen> {
         'arcana': baseCard['arcana'],
         'suit': baseCard['suit'],
         'rank': baseCard['rank'],
+        'asset_name': baseCard['asset_name'],
         'upright': baseCard['upright'],
         'meaning_short': null,
         'keywords': [],
@@ -298,6 +313,7 @@ class _DrawScreenState extends State<DrawScreen> {
           'arcana': card['arcana'],
           'suit': card['suit'],
           'rank': card['rank'],
+          'asset_name': card['asset_name'],
           'upright': card['upright'],
           'meaning_short': null,
           'keywords': [],
@@ -311,6 +327,7 @@ class _DrawScreenState extends State<DrawScreen> {
       'question': (_submittedQuestion ?? widget.initialQuestion ?? '').trim(),
       'context': (_submittedContext ?? widget.initialContext ?? '').trim(),
       if ((_submittedUnit ?? widget.initialUnit)?.isNotEmpty ?? false) 'unit': (_submittedUnit ?? widget.initialUnit),
+      if (result['sexual_profile'] != null) 'sexual_profile': result['sexual_profile'],
       'cards': cards,
     };
   }
@@ -333,7 +350,7 @@ class _DrawScreenState extends State<DrawScreen> {
       if (index >= 0 && index < labels.length) return labels[index];
     }
     if (type == 'partner_sexual') {
-      return '';
+      return fallback.isEmpty ? '${index + 1}' : fallback;
     }
     if (type == 'today_deep') {
       const labels = ['恋愛', '仕事', '金運', 'トラブル'];
@@ -343,6 +360,8 @@ class _DrawScreenState extends State<DrawScreen> {
   }
 
   Widget _questionField() {
+    final questionHint = _questionHintText(widget.fortuneTypeKey);
+    final contextHint = _contextHintText(widget.fortuneTypeKey);
     if (_useDetailedForm) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -358,14 +377,20 @@ class _DrawScreenState extends State<DrawScreen> {
             TextField(
               controller: _questionController,
               readOnly: _revealed,
-              decoration: const InputDecoration(labelText: '質問（任意）'),
+              decoration: _underlinedDecoration(
+                labelText: '質問（任意）',
+                hintText: questionHint,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _noteController,
               readOnly: _revealed,
               maxLines: 2,
-              decoration: const InputDecoration(labelText: '補足（任意）'),
+              decoration: _underlinedDecoration(
+                labelText: '補足（任意）',
+                hintText: contextHint,
+              ),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -383,12 +408,74 @@ class _DrawScreenState extends State<DrawScreen> {
       controller: _questionController,
       readOnly: _revealed,
       maxLines: 2,
-      decoration: const InputDecoration(
+      decoration: _underlinedDecoration(
         labelText: '質問事項',
-        hintText: '占ってほしい内容を入力してください',
-        border: OutlineInputBorder(),
+        hintText: questionHint,
       ),
     );
+  }
+
+  InputDecoration _underlinedDecoration({
+    required String labelText,
+    required String hintText,
+  }) {
+    return const InputDecoration().copyWith(
+      labelText: labelText,
+      hintText: hintText,
+      border: const UnderlineInputBorder(),
+      enabledBorder: const UnderlineInputBorder(),
+      focusedBorder: const UnderlineInputBorder(),
+    );
+  }
+
+  String _questionHintText(String key) {
+    switch (key) {
+      case 'hexagram_love':
+        return '例：この恋を進めるべき？';
+      case 'hexagram_reunion':
+        return '例：復縁の可能性はある？';
+      case 'hexagram_unreq':
+        return '例：片思いを進展させるには？';
+      case 'hexagram_marriage':
+        return '例：結婚に向けて今何をすべき？';
+      case 'celtic_work':
+        return '例：今の仕事を続けるべき？';
+      case 'celtic_startup':
+        return '例：起業するなら今が良い？';
+      case 'celtic_job':
+        return '例：転職するならいつが良い？';
+      case 'triangle_crime':
+        return '例：この相手にどう備えるべき？';
+      case 'partner_sexual':
+        return '例：相手の本音や傾向を知りたい';
+      default:
+        return '占ってほしい内容を入力してください';
+    }
+  }
+
+  String _contextHintText(String key) {
+    switch (key) {
+      case 'hexagram_love':
+        return '例：連絡頻度や今の関係性';
+      case 'hexagram_reunion':
+        return '例：別れた時期や連絡状況';
+      case 'hexagram_unreq':
+        return '例：相手との接点や距離感';
+      case 'hexagram_marriage':
+        return '例：交際期間や結婚の話し合い状況';
+      case 'celtic_work':
+        return '例：役割や職場で悩んでいる点';
+      case 'celtic_startup':
+        return '例：業種や準備状況、資金面';
+      case 'celtic_job':
+        return '例：希望条件や現職の悩み';
+      case 'triangle_crime':
+        return '例：相手の言動や気になっている点';
+      case 'partner_sexual':
+        return '例：関係性や最近の変化';
+      default:
+        return '補足情報があれば入力してください';
+    }
   }
 
   void _saveDetailedInput() {

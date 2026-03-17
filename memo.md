@@ -52,8 +52,29 @@ VALUES (
 frontend
 flutter run -d chrome --dart-define=DEV_USER_ID=e154d397-dff7-4780-b5c4-5aa3a3889a7d --dart-define=DEV_AUTH_TOKEN=test
 
+android
+$ADB="$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+
+# 1) adb再起動
+& $ADB kill-server
+& $ADB start-server
+
+# 2) エミュレータ起動（閉じてる場合）
+flutter emulators --launch Medium_Phone_API_36.1
+
+# 3) 端末認識待ち
+& $ADB wait-for-device
+& $ADB devices
+flutter devices --device-timeout 60
+
+# 4) アプリ起動（reverse不要）
+
+cd C:\Users\miya4\doc\tarot_app\frontend
+flutter run -d emulator-5554 --dart-define=DEV_USER_ID=e154d397-dff7-4780-b5c4-5aa3a3889a7d --dart-define=ENV=test
+
+
 backend
-python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 
 
 データクリア

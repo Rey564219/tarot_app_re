@@ -54,6 +54,8 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final questionHint = _questionHintText(widget.fortuneTypeKey);
+    final contextHint = _contextHintText(widget.fortuneTypeKey);
     return AppScaffold(
       title: '質問事項',
       subtitle: 'カードを引く前に、気になることがあれば書いてください。',
@@ -90,14 +92,14 @@ class _QuestionScreenState extends State<QuestionScreen> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: _questionController,
-                  decoration: const InputDecoration(hintText: '例：今の仕事を続けるべき？'),
+                  decoration: _underlinedDecoration(hintText: questionHint),
                 ),
                 const SizedBox(height: 16),
                 Text('補足（任意）', style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _contextController,
-                  decoration: const InputDecoration(hintText: '例：ここ1年迷っています'),
+                  decoration: _underlinedDecoration(hintText: contextHint),
                   maxLines: 2,
                 ),
               ],
@@ -115,5 +117,64 @@ class _QuestionScreenState extends State<QuestionScreen> {
         ],
       ),
     );
+  }
+
+  InputDecoration _underlinedDecoration({required String hintText}) {
+    return const InputDecoration().copyWith(
+      hintText: hintText,
+      border: const UnderlineInputBorder(),
+      enabledBorder: const UnderlineInputBorder(),
+      focusedBorder: const UnderlineInputBorder(),
+    );
+  }
+
+  String _questionHintText(String key) {
+    switch (key) {
+      case 'hexagram_love':
+        return '例：この恋を進めるべき？';
+      case 'hexagram_reunion':
+        return '例：復縁の可能性はある？';
+      case 'hexagram_unreq':
+        return '例：片思いを進展させるには？';
+      case 'hexagram_marriage':
+        return '例：結婚に向けて今何をすべき？';
+      case 'celtic_work':
+        return '例：今の仕事を続けるべき？';
+      case 'celtic_startup':
+        return '例：起業するなら今が良い？';
+      case 'celtic_job':
+        return '例：転職するならいつが良い？';
+      case 'triangle_crime':
+        return '例：この相手にどう備えるべき？';
+      case 'partner_sexual':
+        return '例：相手の本音や傾向を知りたい';
+      default:
+        return '例：今の仕事を続けるべき？';
+    }
+  }
+
+  String _contextHintText(String key) {
+    switch (key) {
+      case 'hexagram_love':
+        return '例：連絡頻度や今の関係性';
+      case 'hexagram_reunion':
+        return '例：別れた時期や連絡状況';
+      case 'hexagram_unreq':
+        return '例：相手との接点や距離感';
+      case 'hexagram_marriage':
+        return '例：交際期間や結婚の話し合い状況';
+      case 'celtic_work':
+        return '例：役割や職場で悩んでいる点';
+      case 'celtic_startup':
+        return '例：業種や準備状況、資金面';
+      case 'celtic_job':
+        return '例：希望条件や現職の悩み';
+      case 'triangle_crime':
+        return '例：相手の言動や気になっている点';
+      case 'partner_sexual':
+        return '例：関係性や最近の変化';
+      default:
+        return '例：ここ1年迷っています';
+    }
   }
 }

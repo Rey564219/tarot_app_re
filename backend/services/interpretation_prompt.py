@@ -36,7 +36,7 @@ FORTUNE_QUESTION_TEXT = {
     'celtic_startup': '起業の悩み',
     'celtic_job': '転職の悩み',
     'flower_timing': '行動の時期',
-    'triangle_crime': '警戒すべき点',
+    'triangle_crime': '犯罪者である相手について、意図・機会・自己正当化の傾向を見たい',
     'partner_sexual': '相手の性的傾向',
 }
 
@@ -63,6 +63,7 @@ def build_prompt(input_json: dict) -> str:
     question = input_json.get('question') or ''
     context = input_json.get('context') or ''
     unit = input_json.get('unit')
+    sexual_profile = input_json.get('sexual_profile') if isinstance(input_json.get('sexual_profile'), dict) else None
     hint = FORTUNE_PROMPT_HINTS.get(fortune_key) or TYPE_FALLBACK_HINTS.get(kind) or 'カードの配置に沿って簡潔に解釈する。'
     default_question = FORTUNE_QUESTION_TEXT.get(fortune_key) or ''
 
@@ -135,8 +136,38 @@ def build_prompt(input_json: dict) -> str:
                 'Each line should be 1-3 sentences.',
             ]
         )
+    elif fortune_key == 'partner_sexual':
+        lines.extend(
+            [
+                'This is a trump-card based sexual tendency spread.',
+                'Important fixed rule: upright = S, reversed = M.',
+                'Card meanings are symbolic nuance, not literal facts or fixed labels.',
+                'Infer tendencies from aggregate patterns and numeric metrics, not from a single card.',
+                'Output format (exact labels, no bullets):',
+                '判定: ...',
+                'S度: ...%',
+                'M度: ...%',
+                '傾向: ...',
+                'スイッチャー傾向: ...',
+                '補足: ...',
+                'Reflect the given percentages and the tendency card directly in the text.',
+            ]
+        )
     else:
         lines.append('Output: 6-10 sentences, no bullet points.')
+
+    if fortune_key == 'triangle_crime':
+        lines.extend(
+            [
+                'Interpretation perspective: analyze a potentially harmful counterpart (the offender side), not the querent as perpetrator.',
+                'Never provide suggestions that enable, justify, or optimize criminal acts.',
+                'Focus on warning signs, boundary setting, evidence preservation, and safety-oriented actions for the querent.',
+                'Output format (exact labels, no bullets):',
+                '危険度: 低 / 中 / 高 / 緊急 のいずれか1つ',
+                '根拠: カード配置から危険度を判断した理由を簡潔に述べる。',
+                '対策: 相談者が今日から取るべき安全行動を具体的に述べる。',
+            ]
+        )
 
     lines.extend(
         [
@@ -169,7 +200,59 @@ def build_prompt(input_json: dict) -> str:
             lines.append(f'Question: {default_question}')
         if context:
             lines.append(f'Context: {context}')
+    if sexual_profile:
+        lines.extend(
+            [
+                '',
+                'Partner Sexual Metrics:',
+                f"- Upright(S) count: {sexual_profile.get('s_count')}",
+                f"- Reversed(M) count: {sexual_profile.get('m_count')}",
+                f"- S degree: {sexual_profile.get('s_percent')}%",
+                f"- M degree: {sexual_profile.get('m_percent')}%",
+                f"- Balance label: {sexual_profile.get('balance_label')}",
+                f"- Dominant attribute: {sexual_profile.get('dominant_attribute')}",
+            ]
+        )
+        tendency = sexual_profile.get('tendency')
+        if isinstance(tendency, dict):
+            lines.append(
+                f"- Tendency card: {tendency.get('card', {}).get('name')} ({tendency.get('attribute')}) | {tendency.get('category')} | {tendency.get('theme')}"
+            )
+        switcher = sexual_profile.get('switcher')
+        if isinstance(switcher, dict):
+            left = switcher.get('left') or {}
+            right = switcher.get('right') or {}
+            lines.append(
+                f"- Switcher: detected={switcher.get('detected')} left(S/M)={left.get('s')}/{left.get('m')} right(S/M)={right.get('s')}/{right.get('m')}"
+            )
+        numeric_traits = sexual_profile.get('numeric_traits')
+        if isinstance(numeric_traits, dict):
+            lines.append(f"- Polarity index (S%-M%): {numeric_traits.get('polarity_index')}")
+            lines.append(f"- Imbalance count |S-M|: {numeric_traits.get('imbalance_count')}")
+            suit_counts = numeric_traits.get('suit_counts') or {}
+            if isinstance(suit_counts, dict):
+                lines.append(
+                    '- Suit counts: '
+                    f"Spade={suit_counts.get('Spade', 0)} "
+                    f"Club={suit_counts.get('Club', 0)} "
+                    f"Diamond={suit_counts.get('Diamond', 0)} "
+                    f"Harts={suit_counts.get('Harts', 0)} "
+                    f"Joker={suit_counts.get('Joker', 0)}"
+                )
+            rank_band_counts = numeric_traits.get('rank_band_counts') or {}
+            if isinstance(rank_band_counts, dict):
+                lines.append(
+                    '- Rank bands: '
+                    f"low(1-6)={rank_band_counts.get('low', 0)} "
+                    f"mid(7-10)={rank_band_counts.get('mid', 0)} "
+                    f"high(J-Q-K)={rank_band_counts.get('high', 0)} "
+                    f"joker={rank_band_counts.get('joker', 0)}"
+                )
+        lines.append(
+            f"- Joker boost: applied={sexual_profile.get('joker_boost_applied')} target={sexual_profile.get('joker_boost_target')}"
+        )
     lines.append('')
     lines.append('Focus on the positions (past/present/future or given labels).')
+    lines.append('Treat card meanings as nuance and metaphor; avoid one-to-one deterministic claims.')
     lines.append('Avoid claiming certainty; offer guidance.')
     return '\n'.join(lines)

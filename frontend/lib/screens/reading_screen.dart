@@ -49,11 +49,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
     if (_result == null) {
       _fetch();
     } else {
-      _sendInterpretationInput().then((_) async {
-        await _loadInterpretation();
-        await _loadHistory();
-        await _autoGenerateIfNeeded();
-      });
+      _prepareInterpretation();
     }
   }
 
@@ -62,14 +58,31 @@ class _ReadingScreenState extends State<ReadingScreen> {
     try {
       final response = await AppSession.instance.api.getJson('/readings/${widget.readingId}');
       setState(() => _result = response['result_json']);
+      await _prepareInterpretation(runWithLoading: false);
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _prepareInterpretation({bool runWithLoading = true}) async {
+    if (runWithLoading && mounted) {
+      setState(() => _loading = true);
+    }
+    try {
       await _sendInterpretationInput();
       await _loadInterpretation();
       await _loadHistory();
       await _autoGenerateIfNeeded();
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) {
+        setState(() => _error = e.toString());
+      }
     } finally {
-      setState(() => _loading = false);
+      if (runWithLoading && mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -292,11 +305,12 @@ class _ReadingScreenState extends State<ReadingScreen> {
     final cards = slots.map((slot) {
       final card = slot['card'] ?? {};
       return {
-        'position': type == 'partner_sexual' ? '' : slot['position'],
+        'position': type == 'partner_sexual' ? (slot['position'] ?? '') : slot['position'],
         'card_name': card['name'],
         'arcana': card['arcana'],
         'suit': card['suit'],
         'rank': card['rank'],
+        'asset_name': card['asset_name'],
         'upright': card['upright'],
         'meaning_short': null,
         'keywords': [],
@@ -311,6 +325,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
         'arcana': baseCard['arcana'],
         'suit': baseCard['suit'],
         'rank': baseCard['rank'],
+        'asset_name': baseCard['asset_name'],
         'upright': baseCard['upright'],
         'meaning_short': null,
         'keywords': [],
@@ -326,6 +341,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
           'arcana': card['arcana'],
           'suit': card['suit'],
           'rank': card['rank'],
+          'asset_name': card['asset_name'],
           'upright': card['upright'],
           'meaning_short': null,
           'keywords': [],
@@ -338,6 +354,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       'fortune_type_key': fortuneTypeKey,
       'question': showQuestion ? _questionController.text.trim() : '',
       'context': showQuestion ? _contextController.text.trim() : '',
+      if (result['sexual_profile'] != null) 'sexual_profile': result['sexual_profile'],
       'cards': cards,
     };
   }
@@ -369,12 +386,12 @@ class _ReadingScreenState extends State<ReadingScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _questionController,
-            decoration: const InputDecoration(labelText: '質問（任意）'),
+            decoration: _underlinedDecoration(labelText: '質問（任意）'),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: _contextController,
-            decoration: const InputDecoration(labelText: '補足（任意）'),
+            decoration: _underlinedDecoration(labelText: '補足（任意）'),
             maxLines: 2,
           ),
           const SizedBox(height: 8),
@@ -393,6 +410,15 @@ class _ReadingScreenState extends State<ReadingScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  InputDecoration _underlinedDecoration({required String labelText}) {
+    return const InputDecoration().copyWith(
+      labelText: labelText,
+      border: const UnderlineInputBorder(),
+      enabledBorder: const UnderlineInputBorder(),
+      focusedBorder: const UnderlineInputBorder(),
     );
   }
 

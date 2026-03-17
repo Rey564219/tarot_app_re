@@ -181,6 +181,7 @@ class _BatchReadingCardState extends State<BatchReadingCard> {
         'arcana': card['arcana'],
         'suit': card['suit'],
         'rank': card['rank'],
+        'asset_name': card['asset_name'],
         'upright': card['upright'],
         'meaning_short': null,
         'keywords': [],
@@ -195,6 +196,7 @@ class _BatchReadingCardState extends State<BatchReadingCard> {
         'arcana': baseCard['arcana'],
         'suit': baseCard['suit'],
         'rank': baseCard['rank'],
+        'asset_name': baseCard['asset_name'],
         'upright': baseCard['upright'],
         'meaning_short': null,
         'keywords': [],
@@ -210,6 +212,7 @@ class _BatchReadingCardState extends State<BatchReadingCard> {
           'arcana': card['arcana'],
           'suit': card['suit'],
           'rank': card['rank'],
+          'asset_name': card['asset_name'],
           'upright': card['upright'],
           'meaning_short': null,
           'keywords': [],
@@ -222,6 +225,7 @@ class _BatchReadingCardState extends State<BatchReadingCard> {
       'fortune_type_key': fortuneTypeKey,
       'question': '',
       'context': '',
+      if (result['sexual_profile'] != null) 'sexual_profile': result['sexual_profile'],
       'cards': cards,
     };
   }
@@ -239,15 +243,36 @@ class _BatchReadingCardState extends State<BatchReadingCard> {
         children: [
           Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
-          SpreadView(resultJson: widget.resultJson),
-          const SizedBox(height: 16),
           if (_loading)
-            const Center(child: CircularProgressIndicator())
-          else if (_error != null)
-            Text(_error!, style: const TextStyle(color: Colors.red))
-          else
-            _interpretationBox(context),
+            _loadingBlock(context)
+          else ...[
+            SpreadView(resultJson: widget.resultJson),
+            const SizedBox(height: 16),
+            if (_error != null)
+              Text(_error!, style: const TextStyle(color: Colors.red))
+            else
+              _interpretationBox(context),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _loadingBlock(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 20),
+      child: Center(
+        child: Column(
+          children: [
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            SizedBox(height: 10),
+            Text('Loading result...'),
+          ],
+        ),
       ),
     );
   }

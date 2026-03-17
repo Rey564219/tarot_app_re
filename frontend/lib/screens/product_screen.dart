@@ -135,7 +135,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
-                        '\u30ef\u30f3\u30bf\u30a4\u30e0\u9271\u5bdf\u3067\u3059\u3002\u6c7a\u6e08\u5b8c\u4e86\u5f8c\u306b\u30ab\u30fc\u30c9\u3092\u5f15\u3051\u307e\u3059\u3002',
+                        '\u30ef\u30f3\u30bf\u30a4\u30e0\u9451\u5b9a\u3067\u3059\u3002\u6c7a\u6e08\u5b8c\u4e86\u5f8c\u306b\u30ab\u30fc\u30c9\u3092\u5f15\u3051\u307e\u3059\u3002',
                       ),
                     ),
                     const SizedBox(height: 16),
