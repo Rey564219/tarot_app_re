@@ -65,11 +65,11 @@ flutter emulators --launch Medium_Phone_API_36.1
 # 3) 端末認識待ち
 & $ADB wait-for-device
 & $ADB devices
-flutter devices --device-timeout 60
+flutter dev ices --device-timeout 60
 
 # 4) アプリ起動（reverse不要）
 
-cd C:\Users\miya4\doc\tarot_app\frontend
+cd C:\Use　　rs\miya4\doc\tarot_app\frontend
 flutter run -d emulator-5554 --dart-define=DEV_USER_ID=e154d397-dff7-4780-b5c4-5aa3a3889a7d --dart-define=ENV=test
 
 
