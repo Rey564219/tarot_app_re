@@ -11,17 +11,20 @@ Four of Swords → four_of_swords.png
 
 
 プロダクトの取得
+```
 SELECT p.id, p.product_key
 FROM products p
 JOIN fortune_types ft ON ft.id = p.fortune_type_id
 WHERE p.platform = 'android'
 LIMIT 20;
-
+```
 ユーザーの取得
+```
 SELECT id FROM users ORDER BY created_at DESC LIMIT 1;
-
+```
 
 買い切りのテスト
+```
 INSERT INTO purchases (id, user_id, product_id, platform, store_transaction_id, status)
 VALUES (
   gen_random_uuid(),
@@ -31,9 +34,9 @@ VALUES (
   'test_txn_001',
   'verified'
 );
-
+```
 サブスクのテスト
-
+```
 INSERT INTO subscriptions (
   id, user_id, platform, store_subscription_id, status,
   current_period_start, current_period_end, auto_renew
@@ -48,36 +51,43 @@ VALUES (
   now() + interval '30 days',
   true
 );
-
+```
 frontend
+```
 flutter run -d chrome --dart-define=DEV_USER_ID=e154d397-dff7-4780-b5c4-5aa3a3889a7d --dart-define=DEV_AUTH_TOKEN=test
-
+```
 android
+```
 $ADB="$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
-
+```
 # 1) adb再起動
+```
 & $ADB kill-server
 & $ADB start-server
-
+```
 # 2) エミュレータ起動（閉じてる場合）
+```
 flutter emulators --launch Medium_Phone_API_36.1
-
+```
 # 3) 端末認識待ち
+```
 & $ADB wait-for-device
 & $ADB devices
 flutter dev ices --device-timeout 60
-
+```
 # 4) アプリ起動（reverse不要）
-
-cd C:\Use　　rs\miya4\doc\tarot_app\frontend
+```
+cd C:\Users\miya4\doc\tarot_app\frontend
 flutter run -d emulator-5554 --dart-define=DEV_USER_ID=e154d397-dff7-4780-b5c4-5aa3a3889a7d --dart-define=ENV=test
-
+```
 
 backend
+```
 python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
-
+```
 
 データクリア
+```
 BEGIN;
 
 WITH win AS (
@@ -126,6 +136,7 @@ WHERE reading_id IN (
 );
 
 COMMIT;
+```
 
 広告
 実サービスで広告を使う際は ad_manager.dart 内のテスト用ユニットIDを本番IDに置き換えてからビルドしてください。

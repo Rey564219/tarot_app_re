@@ -6,7 +6,7 @@ class SpreadView extends StatelessWidget {
   const SpreadView({
     super.key,
     required this.resultJson,
-    this.showCardName = true,
+    this.showCardName = false,
     this.showPosition = true,
   });
 
