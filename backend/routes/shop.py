@@ -147,8 +147,7 @@ def _notify_discord(lines: list[str]):
 
 
 @router.get('/items')
-def list_shop_items(user_id: str = Depends(get_user_id)):
-    del user_id
+def list_shop_items(_user_id: str = Depends(get_user_id)):
     return {
         'items': [
             {

@@ -74,7 +74,7 @@ def generate_interpretation(reading_id: str, user_id: str = Depends(get_user_id)
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                'SELECT ri.input_json, r.access_type, ft.key '
+                'SELECT ri.input_json, ft.key '
                 'FROM reading_interpretations ri '
                 'JOIN readings r ON r.id = ri.reading_id '
                 'JOIN fortune_types ft ON ft.id = r.fortune_type_id '
@@ -84,7 +84,7 @@ def generate_interpretation(reading_id: str, user_id: str = Depends(get_user_id)
             row = cur.fetchone()
             if not row:
                 raise HTTPException(status_code=404, detail='Interpretation input not found')
-            input_json, access_type, fortune_key = row[0], row[1], row[2]
+            input_json, fortune_key = row[0], row[1]
 
             if not DISABLE_INTERPRETATION_LIMITS:
                 if fortune_key and fortune_key.startswith('today_'):
@@ -179,7 +179,7 @@ def _get_latest_interpretation_for_today(
 
 
 @router.get('/{reading_id}')
-def get_interpretation(reading_id: str, user_id: str = Depends(get_user_id)):
+def get_interpretation(reading_id: str, _user_id: str = Depends(get_user_id)):
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(
