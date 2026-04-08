@@ -11,18 +11,26 @@ class AppSession {
   static final AppSession instance = AppSession._();
 
   static const _defaultBaseUrl = 'http://127.0.0.1:8000';
+  static const _androidEmulatorBaseUrl = 'http://10.0.2.2:8000';
   static const _devUserId = String.fromEnvironment('DEV_USER_ID', defaultValue: '');
   static const _devAuthToken = String.fromEnvironment('DEV_AUTH_TOKEN', defaultValue: '');
 
   final ApiClient api = ApiClient(baseUrl: _resolveBaseUrl());
 
   static String _resolveBaseUrl() {
-    const fromEnv = String.fromEnvironment('API_BASE_URL', defaultValue: '');
-    if (fromEnv.isNotEmpty) {
-      return fromEnv;
+    const apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (apiBaseUrl.isNotEmpty) {
+      return apiBaseUrl;
+    }
+    const androidDeviceBaseUrl = String.fromEnvironment(
+      'ANDROID_DEVICE_API_BASE_URL',
+      defaultValue: '',
+    );
+    if (androidDeviceBaseUrl.isNotEmpty) {
+      return androidDeviceBaseUrl;
     }
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000';
+      return _androidEmulatorBaseUrl;
     }
     return _defaultBaseUrl;
   }
@@ -40,10 +48,25 @@ class AppSession {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString(_tokenKey);
     _userId = prefs.getString(_userIdKey);
-    if (_token == null) {
-      await _bootstrapAuth(prefs);
-    } else {
-      api.setToken(_token!);
+    try {
+      final hasDevUserOnly = _devUserId.isNotEmpty && _devAuthToken.isEmpty;
+      if (hasDevUserOnly) {
+        throw Exception(
+          'DEV_USER_ID is set but DEV_AUTH_TOKEN is empty. '
+          'Pass --dart-define=DEV_AUTH_TOKEN=<token> to use /auth/dev.',
+        );
+      }
+
+      final hasDevAuthConfig = _devUserId.isNotEmpty && _devAuthToken.isNotEmpty;
+      if (hasDevAuthConfig) {
+        await _bootstrapAuth(prefs);
+      } else if (_token == null) {
+        await _bootstrapAuth(prefs);
+      } else {
+        api.setToken(_token!);
+      }
+    } catch (error) {
+      throw Exception(_buildBootstrapErrorMessage(error));
     }
   }
 
@@ -81,5 +104,22 @@ class AppSession {
   static String prettyJson(Object? value) {
     const encoder = JsonEncoder.withIndent('  ');
     return encoder.convert(value);
+  }
+
+  String _buildBootstrapErrorMessage(Object error) {
+    final hint = <String>[
+      '接続先: ${api.baseUrl}',
+      '接続に失敗しました。バックエンド起動状況を確認してください。',
+    ];
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      hint.add(
+        'Android 実機で起動している場合は '
+        '--dart-define=API_BASE_URL=http://<PCのIPアドレス>:8000 '
+        'を指定して再実行してください。',
+      );
+    }
+
+    return '$error\n\n${hint.join('\n')}';
   }
 }

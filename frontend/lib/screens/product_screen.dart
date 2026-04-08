@@ -120,7 +120,7 @@ class _ProductScreenState extends State<ProductScreen> {
                     Text(title, style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 8),
                     Text(
-                      _formatPrice(_product),
+                      _formatPrice(_product, _fortuneType),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
@@ -162,17 +162,29 @@ class _ProductScreenState extends State<ProductScreen> {
     );
   }
 
-  String _formatPrice(Map<String, dynamic>? product) {
+  String _formatPrice(Map<String, dynamic>? product, Map<String, dynamic>? fortuneType) {
     if (product == null) return '';
-    final priceCents = product['price_cents'];
+    final fortuneKey = fortuneType?['key']?.toString() ?? '';
+    final accessType = fortuneType?['access_type_default']?.toString().toLowerCase() ?? '';
+    final isOneTime = accessType == 'one_time';
+    final apiPriceCents = product['price_cents'] as num?;
+    final displayPriceCents = isOneTime
+        ? _oneTimeDisplayPriceCents(fortuneKey)
+        : apiPriceCents;
     final currencyRaw = product['currency']?.toString().toUpperCase() ?? '';
-    if (priceCents is num) {
+    if (displayPriceCents is num) {
       if (currencyRaw == 'JPY') {
-        return '\u4fa1\u683c: \u00a5${priceCents.toInt()}';
+        return '\u4fa1\u683c: \u00a5${displayPriceCents.toInt()}';
       }
-      final value = (priceCents / 100).toStringAsFixed(2);
+      final value = (displayPriceCents / 100).toStringAsFixed(2);
       return '\u4fa1\u683c: $value $currencyRaw';
     }
-    return '\u4fa1\u683c: $priceCents $currencyRaw';
+    return '\u4fa1\u683c: ${product['price_cents']} $currencyRaw';
+  }
+
+  int _oneTimeDisplayPriceCents(String fortuneKey) {
+    if (fortuneKey == 'triangle_crime') return 1500;
+    if (fortuneKey == 'partner_sexual') return 500;
+    return 300;
   }
 }

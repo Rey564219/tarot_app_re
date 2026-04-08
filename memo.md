@@ -62,8 +62,8 @@ $ADB="$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 ```
 # 1) adb再起動
 ```
-& $ADB kill-server
-& $ADB start-server
+$ADB kill-server
+$ADB start-server
 ```
 # 2) エミュレータ起動（閉じてる場合）
 ```

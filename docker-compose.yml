@@ -39,6 +39,8 @@ services:
       ALLOW_X_USER_ID_FALLBACK: ${ALLOW_X_USER_ID_FALLBACK:-false}
       ADMIN_USER_IDS: ${ADMIN_USER_IDS:-}
       ADMIN_LIFE_OVERRIDE: ${ADMIN_LIFE_OVERRIDE:-99}
+      ENABLE_DEV_AUTH: ${ENABLE_DEV_AUTH:-false}
+      DEV_AUTH_TOKEN: ${DEV_AUTH_TOKEN:-}
     ports:
       - "8000:8000"
     depends_on:

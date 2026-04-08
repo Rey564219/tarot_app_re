@@ -28,16 +28,16 @@ ON CONFLICT (key) DO UPDATE SET
 
 INSERT INTO products (id, product_key, fortune_type_id, name, price_cents, currency, platform, active)
 VALUES
-  ('e3561581-b4a9-4b69-89ca-d99741641931', 'p_hex_love_android', (SELECT id FROM fortune_types WHERE key = 'hexagram_love'), '悩み別ヘキサグラム(恋�E)', 980, 'JPY', 'android', true),
-  ('dc0da8ed-9f25-48c7-9203-4c3a2131d6a4', 'p_hex_reunion_android', (SELECT id FROM fortune_types WHERE key = 'hexagram_reunion'), '悩み別ヘキサグラム(復縁E', 980, 'JPY', 'android', true),
-  ('7a592417-29bb-4e78-bdf7-aaa3ceadadc8', 'p_hex_unreq_android', (SELECT id FROM fortune_types WHERE key = 'hexagram_unreq'), '悩み別ヘキサグラム(牁E��い)', 980, 'JPY', 'android', true),
-  ('2f285447-666a-44c8-9a66-064181bf4927', 'p_hex_marriage_android', (SELECT id FROM fortune_types WHERE key = 'hexagram_marriage'), '悩み別ヘキサグラム(結婁E', 980, 'JPY', 'android', true),
-  ('b6bcc43c-45ae-46dc-9c7d-56b7fc42c14a', 'p_celtic_work_android', (SELECT id FROM fortune_types WHERE key = 'celtic_work'), '悩み別ケルト十孁E仕亁E', 1200, 'JPY', 'android', true),
-  ('3b60237d-48c2-4f1a-a8e1-82df363d79aa', 'p_celtic_startup_android', (SELECT id FROM fortune_types WHERE key = 'celtic_startup'), '悩み別ケルト十孁E起業)', 1200, 'JPY', 'android', true),
-  ('08a4d7bb-9b9c-4667-881c-fa8791386775', 'p_celtic_job_android', (SELECT id FROM fortune_types WHERE key = 'celtic_job'), '悩み別ケルト十孁E転職)', 1200, 'JPY', 'android', true),
-  ('dce445b3-8dc4-496d-8eab-64f4fa8977a8', 'p_flower_timing_android', (SELECT id FROM fortune_types WHERE key = 'flower_timing'), '行動の時期読み(花占ぁE', 800, 'JPY', 'android', true),
+  ('e3561581-b4a9-4b69-89ca-d99741641931', 'p_hex_love_android', (SELECT id FROM fortune_types WHERE key = 'hexagram_love'), '悩み別ヘキサグラム(恋�E)', 300, 'JPY', 'android', true),
+  ('dc0da8ed-9f25-48c7-9203-4c3a2131d6a4', 'p_hex_reunion_android', (SELECT id FROM fortune_types WHERE key = 'hexagram_reunion'), '悩み別ヘキサグラム(復縁E', 300, 'JPY', 'android', true),
+  ('7a592417-29bb-4e78-bdf7-aaa3ceadadc8', 'p_hex_unreq_android', (SELECT id FROM fortune_types WHERE key = 'hexagram_unreq'), '悩み別ヘキサグラム(牁E��い)', 300, 'JPY', 'android', true),
+  ('2f285447-666a-44c8-9a66-064181bf4927', 'p_hex_marriage_android', (SELECT id FROM fortune_types WHERE key = 'hexagram_marriage'), '悩み別ヘキサグラム(結婁E', 300, 'JPY', 'android', true),
+  ('b6bcc43c-45ae-46dc-9c7d-56b7fc42c14a', 'p_celtic_work_android', (SELECT id FROM fortune_types WHERE key = 'celtic_work'), '悩み別ケルト十孁E仕亁E', 300, 'JPY', 'android', true),
+  ('3b60237d-48c2-4f1a-a8e1-82df363d79aa', 'p_celtic_startup_android', (SELECT id FROM fortune_types WHERE key = 'celtic_startup'), '悩み別ケルト十孁E起業)', 300, 'JPY', 'android', true),
+  ('08a4d7bb-9b9c-4667-881c-fa8791386775', 'p_celtic_job_android', (SELECT id FROM fortune_types WHERE key = 'celtic_job'), '悩み別ケルト十孁E転職)', 300, 'JPY', 'android', true),
+  ('dce445b3-8dc4-496d-8eab-64f4fa8977a8', 'p_flower_timing_android', (SELECT id FROM fortune_types WHERE key = 'flower_timing'), '行動の時期読み(花占ぁE', 300, 'JPY', 'android', true),
   ('a59b5ec0-1722-48e0-8d66-ea2dccf6f4a2', 'p_triangle_crime_android', (SELECT id FROM fortune_types WHERE key = 'triangle_crime'), '犯罪の不正のトライアングル', 1500, 'JPY', 'android', true),
-  ('41b25928-e0ea-4edd-a476-7e0c8ec9743a', 'p_partner_sexual_android', (SELECT id FROM fortune_types WHERE key = 'partner_sexual'), '相手�E性癖占ぁE, 900, 'JPY', 'android', true)
+  ('41b25928-e0ea-4edd-a476-7e0c8ec9743a', 'p_partner_sexual_android', (SELECT id FROM fortune_types WHERE key = 'partner_sexual'), '相手�E性癖占ぁE, 500, 'JPY', 'android', true)
 ON CONFLICT (product_key) DO UPDATE SET
   fortune_type_id = EXCLUDED.fortune_type_id,
   name = EXCLUDED.name,

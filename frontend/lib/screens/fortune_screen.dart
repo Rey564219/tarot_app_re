@@ -137,8 +137,10 @@ class _FortuneScreenState extends State<FortuneScreen> {
           final accessType = fortuneType['access_type_default']?.toString();
           final isOneTime = accessType?.toLowerCase() == 'one_time';
           final description = fortuneType['description']?.toString().trim();
-          final subtitle =
-              (description != null && description.isNotEmpty) ? description : '占いを実行します。';
+          final priceText = isOneTime
+              ? '価格: ¥${_oneTimeDisplayPriceCents(fortuneKey)}'
+              : null;
+          final subtitle = _buildSubtitle(description, priceText);
           final genre = _genreLabel(accessType);
           final showAi = fortuneKey != 'no_desc_draw';
           return FortuneCard(
@@ -254,5 +256,22 @@ class _FortuneScreenState extends State<FortuneScreen> {
       ),
       const SizedBox(height: 16),
     ];
+  }
+
+  String _buildSubtitle(String? description, String? priceText) {
+    final hasDescription = description != null && description.isNotEmpty;
+    if (priceText == null || priceText.isEmpty) {
+      return hasDescription ? description! : '占いを実行します。';
+    }
+    if (hasDescription) {
+      return '$description\n$priceText';
+    }
+    return '占いを実行します。\n$priceText';
+  }
+
+  int _oneTimeDisplayPriceCents(String fortuneKey) {
+    if (fortuneKey == 'triangle_crime') return 1500;
+    if (fortuneKey == 'partner_sexual') return 500;
+    return 300;
   }
 }
